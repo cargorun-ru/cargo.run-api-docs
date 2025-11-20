@@ -3,17 +3,17 @@
 Этот раздел описывает методы API CARGO.RUN, использующиеся для создания, обновления, получения, удаления и управления статусами заявок.  
 Общие правила работы API, в том числе паттерн `Apply`, приведены в файле:
 
-- [_overview.md](./_overview.md)
+- [Обзор API](./_overview.md)
 
 Минимальные обязательные поля заявки — в:
 
-- [minimal-requirements.md](./minimal-requirements.md)
+- [Минимальные требования к запросам](./minimal-requirements.md)
 
 Сценарии интеграции описаны в:
 
-- [integration/scenario-cr-to-external.md](./integration/scenario-cr-to-external.md)
-- [integration/scenario-external-to-cr.md](./integration/scenario-external-to-cr.md)
-- [integration/sync.md](./integration/sync.md)
+- [CARGO.RUN → учетная система](./integration/scenario-cr-to-external.md)
+- [Учетная система → CARGO.RUN](./integration/scenario-external-to-cr.md)
+- [Синхронизация данных](./integration/sync.md)
 
 ---
 
@@ -265,4 +265,5 @@ GET /api/bids/getbiddocumentassignmentsforbid
 | `GET /api/bids/get` | Получение заявки |
 | `GET /api/bids/getlistforexternal` | Инкрементальная синхронизация |
 | `GET /api/bids/getbiddocumentassignmentsforbid` | Получение документов по заявке |
+
 
