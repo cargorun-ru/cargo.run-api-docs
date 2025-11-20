@@ -140,9 +140,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1...
 
 ## 8. Связанные разделы
 
-- [Общий обзор](./integration/overview.md)
-- [Синхронизация справочников](./integration/sync.md)
-- [Примеры для 1С](./integration/examples-1c.md)
+- [Общий обзор](../integration/overview.md)
+- [Синхронизация справочников](../integration/sync.md)
+- [Примеры для 1С](../integration/examples-1c.md)
+
 
 
 
