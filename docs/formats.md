@@ -87,6 +87,7 @@ YYYY-MM-DDTHH:mm:ss
   "latitude": 55.7558,
   "longitude": 37.6176
 }
+```
 
 Допускается использование вложенных структур (например, GeoJSON), если это описано в конкретном методе API.
 
@@ -222,3 +223,4 @@ false
   "isOk": true,
   "errorMessage": "string | null"
 }
+```
