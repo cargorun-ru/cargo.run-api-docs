@@ -11,9 +11,9 @@
 
 Сценарии интеграции описаны в:
 
-- [CARGO.RUN → учетная система](./integration/scenario-cr-to-external.md)
-- [Учетная система → CARGO.RUN](./integration/scenario-external-to-cr.md)
-- [Синхронизация данных](./integration/sync.md)
+- [CARGO.RUN → учетная система](../integration/scenario-cr-to-external.md)
+- [Учетная система → CARGO.RUN](../integration/scenario-external-to-cr.md)
+- [Синхронизация данных](../integration/sync.md)
 
 ---
 
@@ -210,7 +210,7 @@ GET /api/bids/getlistforexternal
 
 Подробное описание в:
 
-- [integration/sync.md](./integration/sync.md)
+- [Синхронизация данных](../integration/sync.md)
 
 ---
 
@@ -320,6 +320,7 @@ POST /api/bids/setpaymentstatus
 | `GET /api/bids/getbiddocumentassignmentsforbid` | Получение документов по заявке |
 | `GET /api/truckingbids/gettrailerreplacements` | Получение данных по перецепкам |
 | `POST /api/bids/setpaymentstatus` | Обновление статуса оплаты по заявке |
+
 
 
 
