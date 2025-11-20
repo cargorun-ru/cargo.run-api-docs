@@ -7,7 +7,7 @@
 
 Минимальные обязательные поля заявки — в:
 
-- [Минимальные требования к запросам](./minimal-requirements.md)
+- [Минимальные требования к запросам](../minimal-requirements.md)
 
 Сценарии интеграции описаны в:
 
@@ -320,6 +320,7 @@ POST /api/bids/setpaymentstatus
 | `GET /api/bids/getbiddocumentassignmentsforbid` | Получение документов по заявке |
 | `GET /api/truckingbids/gettrailerreplacements` | Получение данных по перецепкам |
 | `POST /api/bids/setpaymentstatus` | Обновление статуса оплаты по заявке |
+
 
 
 
