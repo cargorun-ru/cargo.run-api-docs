@@ -41,7 +41,7 @@
 - `/api/CargoOwnerDictionary/Apply`, `/api/CargoOwnerDictionary/Delete`, `/api/CargoOwnerDictionary/Get`
 - `/api/LegalPersons/Apply`, `/api/LegalPersons/Delete`, `/api/LegalPersons/GetList`
 
-**Рекомендуемая частота синхронизации: раз в 1 минуту.**
+**Рекомендуемая частота синхронизации: не больше чем раз в 1 минуту.**
 
 ---
 
@@ -229,3 +229,4 @@ POST /api/truckingbids/forceComplete
 - [Создание заявки в CARGO.RUN → внешняя система](./scenario-cr-to-external.md)
 - [Создание заявки во внешней системе → CARGO.RUN](./scenario-external-to-cr.md)
 - [Минимальные требования к объектам](../minimal-requirements.md)
+
