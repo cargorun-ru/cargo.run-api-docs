@@ -8,8 +8,8 @@
 
 Общие принципы работы API описаны в:
 
-- [Обзор API](./_overview.md)
-- [Auth API](./auth.md)
+- [Обзор API](./api/_overview.md)
+- [Auth API](./api/auth.md)
 
 ---
 
@@ -147,3 +147,4 @@ POST /api/trackers/attach
 | `POST /api/trackers/attach` | Привязка трекера к машине или прицепу |
 | `GET /api/trackers/get` | Получение списка трекеров (с поддержкой OData) |
 | `POST /api/trackers/attach` + `entityId = null` | Отвязка трекера от машины или прицепа |
+
