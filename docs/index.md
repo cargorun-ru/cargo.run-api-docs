@@ -68,7 +68,7 @@
   [Bids API](./api/bids.md)
 
 - Заказы / распределительные заявки  
-  [Orders API](./api/orders.md)
+  [Distribution bids API](./api/distribution-bids.md)
 
 - Трекеры и привязка к ТС  
   [Trackers API](./api/trackers.md)
@@ -78,4 +78,5 @@
 
 - Электронные транспортные накладные (ЭТРН)  
   [ETRN API](./api/etrn.md)
+
 
