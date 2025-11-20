@@ -11,7 +11,7 @@
 
 Подробные правила синхронизации справочников приведены в документе:
 
-- [integration/sync.md](./integration/sync.md)
+- [Синхронизация данных](./integration/sync.md)
 
 Здесь описаны именно **методы API** для работы со справочниками.
 
@@ -22,7 +22,7 @@
 Для всех справочников используются общие правила:
 
 - формат данных — JSON;
-- авторизация — по токену (см. [auth.md](./auth.md));
+- авторизация — по токену (см. [Auth API](./api/auth.md));
 - операции создания и обновления выполняются по паттерну `Apply`:
   - `id = 0` — создание;
   - `id > 0` — обновление;
@@ -31,7 +31,7 @@
 
 Минимальные требования к полям см. в:
 
-- [minimal-requirements.md](./minimal-requirements.md)
+- [Минимальные требования к запросам](./minimal-requirements.md)
 
 ---
 
@@ -264,5 +264,5 @@ GET /api/catalogs/getsimple
 
 Использование этих каталогов описано в:
 
-- [minimal-requirements.md](./minimal-requirements.md)
-- [integration/sync.md](./integration/sync.md)
+- [Минимальные требования к запросам](./minimal-requirements.md)
+- [Синхронизация данных](./integration/sync.md)
