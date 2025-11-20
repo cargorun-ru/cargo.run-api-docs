@@ -43,7 +43,7 @@ POST /api/distributionbids/apply
 ```
 
 Модель `DistributionBidEditModel` содержит поля заказа.  
-Jбязательные поля указаны в разделе:
+Обязательные поля указаны в разделе:
 
 - [Минимальные требования к запросам](./minimal-requirements.md)
 
