@@ -25,9 +25,9 @@ Authorization: Bearer <access_token>
 Базовый URL API определяется для конкретного клиента при подключении:
 
 ```text
-https://app.cargorun.ru/
-https://test.cargorun.ru/
-https://<customer>.cargorun.ru/
+https://api.app.cargorun.ru/
+https://api.test.cargorun.ru/
+https://api.<customer>.cargorun.ru/
 ```
 
 Во всех примерах далее используется абстрактный `<baseUrl>`.
@@ -69,6 +69,15 @@ Content-Type: application/json
   "code": "999999"
 }
 ```
+
+### 3.3. Ограничения метода
+
+Метод `/api/Account/GenerateToken` не предназначен для регулярного или частого вызова. На стороне сервера действуют ограничения (cooldown), и при слишком частом запросе токена сервер может вернуть ошибку `429`.
+
+Причина введения ограничения:
+
+- метод должен использоваться только для начальной авторизации пользователя;
+- дальнейшая работа с API должна выполняться через механизм обновления токена (`RefreshToken`).
 
 ---
 
@@ -143,6 +152,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1...
 - [Общий обзор](../integration/overview.md)
 - [Синхронизация справочников](../integration/sync.md)
 - [Примеры для 1С](../integration/examples-1c.md)
+
 
 
 
