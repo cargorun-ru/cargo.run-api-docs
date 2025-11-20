@@ -26,6 +26,7 @@ Authorization: Bearer <access_token>
 
 ```text
 https://app.cargorun.ru/
+https://test.cargorun.ru/
 https://<customer>.cargorun.ru/
 ```
 
@@ -142,4 +143,5 @@ Authorization: Bearer eyJhbGciOiJIUzI1...
 - [Обзор интеграции](./overview.md)
 - [Синхронизация справочников и заявок](./sync.md)
 - [Пример интеграции с 1С](./examples-1c.md)
+
 
