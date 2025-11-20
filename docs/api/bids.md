@@ -322,3 +322,4 @@ POST /api/bids/setpaymentstatus
 | `POST /api/bids/setpaymentstatus` | Обновление статуса оплаты по заявке |
 
 
+
