@@ -16,25 +16,21 @@
 | `cargoOwnerDictionaryItemId` | number | Идентификатор заказчика (контрагента). |
 | `paymentTypeId` | number | Тип оплаты. |
 | `ndsTypeId` | number | Тип НДС. |
-| `price` | number | Тип НДС. |
-| `driver` | array | Идентификатор водителя. |
-| `carOption` | array | Идентификатор автомобиля (тягача). |
-| `trailerOption` | array | Идентификатор полуприцепа. |
+| `price` | number | стоимость в рублях (с НДС). |
+| `driver` | object | Идентификатор водителя. |
+| `carOption` | object | Идентификатор автомобиля (тягача). |
+| `trailerOption` | object | Идентификатор полуприцепа. |
 | `bidPoints` | array | Маршрутные точки (минимум две: погрузка и выгрузка). |
+
+Поля `cargoOwnerDictionaryItemId`, `paymentTypeId`, `ndsTypeId`, `price` необязательны, если используется признак `emptyMileageBid`.
 
 ---
 
 # 2. Создание заказа (DistributionBid)
 
- `требуется описать` 
-
 | Поле | Тип | Описание |
 |------|------|----------|
-| `cargoOwnerId` | number | Контрагент, которому принадлежит заказ. |
-| `points` | array | Набор маршрутных точек. |
-| `weight` | number | Вес груза (если используется). |
-| `volume` | number | Объём груза (если используется). |
-
+| `bidPoints` | array | Маршрутные точки (минимум две: погрузка и выгрузка). |
 
 ---
 
@@ -91,3 +87,4 @@
 - описание ошибки находится в поле `errorMessage` (если используется `ValidationApiResult`).
 
 Рекомендуется логировать ошибки на стороне внешней системы.
+
