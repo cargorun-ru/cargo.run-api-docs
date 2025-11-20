@@ -3,7 +3,7 @@
 Этот раздел описывает методы API CARGO.RUN, использующиеся для создания, обновления, получения, удаления и управления статусами заявок.  
 Общие правила работы API, в том числе паттерн `Apply`, приведены в файле:
 
-- [Обзор API](./api/_overview.md)
+- [Обзор API](./_overview.md)
 
 Минимальные обязательные поля заявки — в:
 
@@ -320,6 +320,7 @@ POST /api/bids/setpaymentstatus
 | `GET /api/bids/getbiddocumentassignmentsforbid` | Получение документов по заявке |
 | `GET /api/truckingbids/gettrailerreplacements` | Получение данных по перецепкам |
 | `POST /api/bids/setpaymentstatus` | Обновление статуса оплаты по заявке |
+
 
 
 
