@@ -16,7 +16,7 @@
 
 Исключение: метод получения пробегов `/api/car/getcarmileageforperiod`
 
-В нем испльзуется формат без часового пояса: `YYYY-MM-DDTHH:mm:ss`
+В нем используется формат без часового пояса: `YYYY-MM-DDTHH:mm:ss`
 
 Пример: `/api/car/getcarmileageforperiod?carid=694385&start=2025-10-31T21:00:00&end=2025-11-17T20:59:59`
 
