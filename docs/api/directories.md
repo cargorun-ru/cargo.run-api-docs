@@ -265,4 +265,4 @@ GET /api/catalogs/getsimple
 Использование этих каталогов описано в:
 
 - [Минимальные требования к запросам](../minimal-requirements.md)
-- [Синхронизация данных](./integration/sync.md)
+- [Синхронизация данных](../integration/sync.md)
