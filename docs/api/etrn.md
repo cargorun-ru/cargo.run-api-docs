@@ -10,8 +10,8 @@
 
 Общие принципы работы API и авторизации см.:
 
-- [Обзор API](./api/_overview.md)
-- [Auth API](./api/auth.md)
+- [Обзор API](../api/_overview.md)
+- [Auth API](../api/auth.md)
 
 ---
 
@@ -33,7 +33,7 @@ GET /api/1c/bills/gettitles
 - `statusDate` — дата и время изменения статуса;
 - `bill` — данные по накладной (`EBillExternalModel`).
 
-[Статусы титулов ЭТРН](./statuses.md#4-статусы-титулов-этрн
+[Статусы титулов ЭТРН](../statuses.md#4-статусы-титулов-этрн)
 
 ### Параметры запроса
 
@@ -147,4 +147,5 @@ POST /api/1c/bills/applystatus
 | `GET /api/1c/bills/gettitles` | Получение списка титулов ЭТРН со статусами (OData) |
 | `GET /api/1c/bills/gettitle`  | Получение одного титула по идентификатору титула или заявки |
 | `POST /api/1c/bills/applystatus` | Смена статуса титула ЭТРН |
+
 
