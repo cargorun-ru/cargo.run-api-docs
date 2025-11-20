@@ -73,11 +73,9 @@
 - Трекеры и привязка к ТС  
   [Trackers API](./api/trackers.md)
 
-- Сотрудники  
-  [Employees API](./api/employees.md)
-
 - Электронные транспортные накладные (ЭТРН)  
   [ETRN API](./api/etrn.md)
+
 
 
 
