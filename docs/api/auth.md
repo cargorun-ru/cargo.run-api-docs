@@ -69,11 +69,6 @@ Content-Type: application/json
 }
 ```
 
-### 3.3. Ответ
-
-Swagger не содержит точной схемы ответа.  
-Фактический ответ должен быть получен тестовым запросом: access token + refresh token.
-
 ---
 
 ## 4. Обновление токена
@@ -147,3 +142,4 @@ Authorization: Bearer eyJhbGciOiJIUzI1...
 - [Обзор интеграции](./overview.md)
 - [Синхронизация справочников и заявок](./sync.md)
 - [Пример интеграции с 1С](./examples-1c.md)
+
