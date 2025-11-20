@@ -216,13 +216,13 @@ GET /api/bids/getlistforexternal
 
 # 5. Получение связанных данных
 
-## 5.1. Связанные документы (ЭТРН)
+## 5.1. Связанные документы
 
 ```http
 GET /api/bids/getbiddocumentassignmentsforbid
 ```
 
-Возвращает связанные документы (ЭТРН, задания и др.) по заявке.
+Возвращает связанные документы (внешние файлы) по заявке.
 
 ---
 
@@ -232,6 +232,59 @@ GET /api/bids/getbiddocumentassignmentsforbid
 
 - через `/apply` — полная передача модели,
 - через `/patch` — но с передачей **всего массива `bidPoints`**.
+
+
+## 5.3. Получение данных по перецепкам в заявке
+
+```http
+GET /api/truckingbids/gettrailerreplacements
+```
+
+### Назначение
+
+Получение данных о перецепках (замене прицепа) в рамках конкретной заявки.
+
+### Параметры
+
+- `bidId` — идентификатор заявки (query-параметр).
+
+### Комментарии
+
+Метод возвращает список всех событий замены прицепа, зафиксированных по заявке: старый и новый прицеп, время замены, источник данных и комментарий (если задан). Фактическая структура ответа определяется моделью `TrailerReplacementViewModel` в swagger.
+
+---
+
+## 5.4. Обновление статуса оплаты заявки
+
+```http
+POST /api/bids/setpaymentstatus
+```
+
+### Назначение
+
+Установка или изменение статуса оплаты заявки.
+
+### Тело запроса
+
+```json
+{
+  "bidId": 0,
+  "paymentStatus": "Paid"
+}
+```
+
+### Поддерживаемые значения
+
+По перечислению `BidPaymentStatusEnum` в swagger:
+
+- `NotPaid`
+- `PartiallyPaid`
+- `Paid`
+- `Expired`
+
+### Комментарии
+
+Метод используется, когда внешняя система (например, 1С) фиксирует оплату по заявке и должна передать статус оплаты в CARGO.RUN.
 
 ---
 
@@ -265,5 +318,6 @@ GET /api/bids/getbiddocumentassignmentsforbid
 | `GET /api/bids/get` | Получение заявки |
 | `GET /api/bids/getlistforexternal` | Инкрементальная синхронизация |
 | `GET /api/bids/getbiddocumentassignmentsforbid` | Получение документов по заявке |
-
+| `GET /api/truckingbids/gettrailerreplacements` | Получение данных по перецепкам |
+| `POST /api/bids/setpaymentstatus` | Обновление статуса оплаты по заявке |
 
