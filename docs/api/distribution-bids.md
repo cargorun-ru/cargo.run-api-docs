@@ -4,12 +4,12 @@
 
 Общие принципы работы API см. в:
 
-- [Обзор API](./api/_overview.md)
-- [Auth API](./api/auth.md)
+- [Обзор API](../api/_overview.md)
+- [Auth API](../api/auth.md)
 
 Минимальные требования к данным заказа на распределение приведены в:
 
-- [Минимальные требования к запросам](./minimal-requirements.md)
+- [Минимальные требования к запросам](../minimal-requirements.md)
 
 ---
 
@@ -45,7 +45,7 @@ POST /api/distributionbids/apply
 Модель `DistributionBidEditModel` содержит поля заказа.  
 Обязательные поля указаны в разделе:
 
-- [Минимальные требования к запросам](./minimal-requirements.md)
+- [Минимальные требования к запросам](../minimal-requirements.md)
 
 При ошибках валидации возвращается HTTP 4xx и текстовое описание ошибки.
 
