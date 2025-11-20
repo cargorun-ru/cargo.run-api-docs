@@ -61,15 +61,9 @@
 - Авторизация и работа с токенами  
   [Auth API](./api/auth.md)
 
-- Справочники:
-  - Общие каталоги → [common](./api/directories-common.md)  
-  - Водители → [drivers](./api/directories-drivers.md)  
-  - Машины → [cars](./api/directories-cars.md)  
-  - Прицепы → [trailers](./api/directories-trailers.md)  
-  - Контрагенты → [counterparties](./api/directories-counterparties.md)  
-  - Организации → [organizations](./api/directories-organizations.md)  
-  - Пользовательские справочники → [user catalogs](./api/directories-user.md)
-
+- Справочники
+  [API справочников](./api/directories.md )
+  
 - Заявки и рейсы  
   [Bids API](./api/bids.md)
 
@@ -84,3 +78,4 @@
 
 - Электронные транспортные накладные (ЭТРН)  
   [ETRN API](./api/etrn.md)
+
