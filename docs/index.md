@@ -1,4 +1,4 @@
-<p align="center">
+<p align="left">
   <img src="./assets/cargorun-logo.png" alt="CARGO.RUN Logo" width="200">
 </p>
 
@@ -78,6 +78,7 @@
 
 - Электронные транспортные накладные (ЭТРН)  
   [ЭТРН API](./api/etrn.md)
+
 
 
 
