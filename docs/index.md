@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/cargorun-logo.png" alt="CARGO.RUN Logo" width="200">
+</p>
+
 # CARGO.RUN Logistics — Документация по API
 
 Добро пожаловать в документацию по интеграции с **CARGO.RUN Логистика**.  
@@ -74,6 +78,7 @@
 
 - Электронные транспортные накладные (ЭТРН)  
   [ЭТРН API](./api/etrn.md)
+
 
 
 
