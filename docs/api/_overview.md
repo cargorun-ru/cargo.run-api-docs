@@ -26,7 +26,7 @@ Authorization: Bearer <token>
 ```
 
 Полное описание авторизации приведено в разделе:  
-[Auth API](./api/auth.md)
+[Auth API](./auth.md)
 
 ---
 
@@ -172,4 +172,5 @@ POST /api/.../apply
 
 - Глоссарий терминов:  
   [Глоссарий](./glossary.md)
+
 
