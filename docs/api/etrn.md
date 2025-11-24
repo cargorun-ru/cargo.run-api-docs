@@ -10,7 +10,7 @@
 
 Общие принципы работы API и авторизации см.:
 
-- [Обзор API](/_overview.md)
+- [Обзор API](./_overview.md)
 - [Auth API](../api/auth.md)
 
 ---
@@ -147,6 +147,7 @@ POST /api/1c/bills/applystatus
 | `GET /api/1c/bills/gettitles` | Получение списка титулов ЭТРН со статусами (OData) |
 | `GET /api/1c/bills/gettitle`  | Получение одного титула по идентификатору титула или заявки |
 | `POST /api/1c/bills/applystatus` | Смена статуса титула ЭТРН |
+
 
 
 
