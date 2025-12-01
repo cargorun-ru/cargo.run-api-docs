@@ -62,7 +62,7 @@
   [Обзор API](./api/_overview.md)
 
 - Авторизация и работа с токенами  
-  [Auth API](../api/auth.md)
+  [Auth API](./api/auth.md)
 
 - Справочники
   [API справочников](./api/directories.md )
@@ -78,6 +78,7 @@
 
 - Электронные транспортные накладные (ЭТРН)  
   [ЭТРН API](./api/etrn.md)
+
 
 
 
