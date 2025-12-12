@@ -152,13 +152,13 @@ POST /api/.../apply
 ## 5. Сценарии интеграции
 
 ### Заявка создаётся в CARGO.RUN  
-[CARGO.RUN → учетная система](./integration/scenario-cr-to-external.md)
+[CARGO.RUN → учетная система](../integration/scenario-cr-to-external.md)
 
 ### Заявка создаётся во внешней системе  
-[Учетная система → CARGO.RUN](./integration/scenario-external-to-cr.md)
+[Учетная система → CARGO.RUN](../integration/scenario-external-to-cr.md)
 
 Общая синхронизация справочников и заявок:  
-[Синхронизация данных](./integration/sync.md)
+[Синхронизация данных](../integration/sync.md)
 
 ---
 

@@ -59,19 +59,22 @@
 Раздел для разработчиков, которые пишут интеграцию.
 
 - Общие принципы работы API, заголовки, ошибки  
-  [Обзор API](../api/_overview.md)
+  [Обзор API](./api/_overview.md)
 
 - Авторизация и работа с токенами  
   [Auth API](./api/auth.md)
 
 - Справочники
-  [API справочников](./api/directories.md )
+  [API справочников](./api/directories.md)
   
 - Заявки и рейсы  
   [Bids API](./api/bids.md)
 
 - Заказы / распределительные заявки  
   [Distribution bids API](./api/distribution-bids.md)
+
+- Транзакции заправок  
+  [Refueling Transactions API](./api/refueling-transactions.md)
 
 - Трекеры и привязка к ТС  
   [Trackers API](./api/trackers.md)
