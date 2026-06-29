@@ -198,13 +198,3 @@ POST /api/distributionbids/revert
 
 | Метод | Описание |
 |-------|----------|
-| `POST /api/distributionbids/apply` | Cоздание/обновление заказов |
-| `GET /api/distributionbids/getlistforexternal` | Список заказов для внешних сервисов |
-| `GET /api/distributionbids/getlistofexternalinfo` | Информация о внешних заказах для планирования |
-| `GET /api/distributionbids/getlistforexternalstatuses` | Статусы внешних заказов |
-| `GET /api/distributionbids/get/{id}` | Получение заказа по идентификатору |
-| `GET /api/distributionbids/getforbid/{id}` | Получение заказа по заявке |
-| `POST /api/distributionbids/cancel` | Отмена заказа |
-| `POST /api/distributionbids/delete` | Удаление заказа (если нет заявки) |
-| `POST /api/distributionbids/revert` | Возврат отменённого заказа |
-| `POST /api/distributionbids/restore` | Восстановление удалённого заказа |
