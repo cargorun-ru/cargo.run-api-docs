@@ -32,8 +32,12 @@ GET /api/Orders/GetIntegrationList
 Рекомендуется использовать фильтр по дате изменения:
 
 ```http
-GET /api/Orders/GetIntegrationList?$filter=updatedAt ge 2026-06-01T00:00:00.000Z&$top=100
+GET /api/Orders/GetIntegrationList?$filter=updatedAt gt 2026-06-30T16:37:14.138307%2B00:00&$orderby=updatedAt asc&$top=100
 ```
+
+`GetIntegrationList` рекомендуется использовать только для поиска новых и измененных заказов. Для сохранения заказа в учетной системе после получения `id` запрашивайте полную карточку через `GET /api/Orders/GetInfo`.
+
+Если заказ был изменен после сохраненной контрольной точки, он появится в списке с новым `updatedAt`. После успешной обработки страницы сохраните максимальное `updatedAt` как новую контрольную точку.
 
 ---
 
@@ -57,6 +61,31 @@ GET /api/Orders/GetInfo?Id={order_id}
 - внешние идентификаторы;
 - данные аукциона или предложений цены.
 
+### Минимальная карта полей для учетной системы
+
+| Что сохранить | Где взять |
+|---|---|
+| ID заказа CARGO.RUN | `id` |
+| Статус заказа | `status` |
+| Статус выполнения | `bidStatus` |
+| Дата создания | `createdAt` |
+| Стоимость заказчика | `orderCost` |
+| НДС заказчика | `ndsTypeId`, `ndsTypeName` |
+| Заказчик | `counterpartyId`, `counterpartyName` |
+| Экспедитор | `organizationId`, `organizationName` |
+| Перевозчик | `transporterInfo.organizationId`, `transporterInfo.organizationName` |
+| Стоимость перевозчика | `transporterInfo.price` или `invitedFleetPrice` |
+| НДС перевозчика | `transporterNdsType` |
+| Машина и прицеп | `truckNumber`, `trailerNumber` |
+| Водитель | `driverFullName`, `driverPhoneNumber` |
+| Комментарий | `comment` |
+| Груз | `cargoCost`, `cargoType`, `cargoWeight`, `packTypeNames`, `packCount` |
+| Тип полуприцепа | `trailerTypeNames` |
+| Тип стоимости | `orderPriceType` |
+| Маршрут | `points[]` |
+
+Для завершенной перевозки обычно используются `status = 40` (`Completed`) и `bidStatus = 60` (`Done`). Если нужно загружать заказы в работе, используйте и промежуточные значения `bidStatus`, например `41` (`Loaded`).
+
 ---
 
 ## 4. Сопоставление с внешней системой
@@ -78,15 +107,56 @@ GET /api/Orders/GetInfo?Id={order_id}
 
 После выбора перевозчика и запуска в работу в заказе появляются:
 
-- `transporter`;
-- `truck`;
-- `driver`;
-- `trailer`;
+- `transporterInfo`;
+- `truckNumber`;
+- `trailerNumber`;
+- `driverFullName`;
+- `driverPhoneNumber`;
 - `orderTruckMatchingId`;
 - `bidStatus`;
 - фактические времена в `points`.
 
 Эти поля используются для загрузки результатов работы с заказом во внешнюю систему.
+
+Если перевозчик еще не выбран, например заказ находится в состоянии нового запущенного заказа без откликов, `transporterInfo`, `truckNumber`, `trailerNumber` и телефон водителя могут быть `null`, а `matchingCars` может быть пустым массивом.
+
+### Пример итоговых данных
+
+```json
+{
+  "id": 1552749,
+  "status": 40,
+  "bidStatus": 60,
+  "orderCost": 24400,
+  "ndsTypeName": "НДС 22%",
+  "counterpartyName": "ООО \"Делаем загрузки\"",
+  "organizationName": "ltgf",
+  "transporterInfo": {
+    "organizationId": 95714,
+    "organizationName": "ООО \"Перевоз-Холодос\"",
+    "price": 22000
+  },
+  "transporterNdsType": "НДС 22%",
+  "truckNumber": "А001АА116",
+  "trailerNumber": "АА123456",
+  "driverFullName": "Морозов Иван Афанасьевич",
+  "driverPhoneNumber": "72441262995",
+  "points": [
+    {
+      "index": 0,
+      "pointType": 10,
+      "location": {
+        "address": "Республика Мордовия, рабочий посёлок Атяшево",
+        "latitude": 54.588027,
+        "longitude": 46.077537
+      },
+      "planEnterTimeOffset": "2026-06-30T06:10:00+03:00",
+      "factEnterTimeOffset": "2026-06-30T08:30:00+03:00",
+      "factLeaveTimeOffset": "2026-06-30T08:35:00+03:00"
+    }
+  ]
+}
+```
 
 ---
 
