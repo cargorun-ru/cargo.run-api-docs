@@ -254,37 +254,61 @@ GET /api/truckingbids/gettrailerreplacements
 
 ---
 
-## 5.4. Обновление статуса оплаты заявки
+## 5.4. Обновление данных по оплате заявки
+
+```http
+POST /api/TruckingBids/ApplyBidPayment
+```
+
+### Назначение
+
+Установка или изменение данных по оплате заявки.
+
+Метод заменяет ранее использовавшийся:
 
 ```http
 POST /api/bids/setpaymentstatus
 ```
 
-### Назначение
-
-Установка или изменение статуса оплаты заявки.
+Используйте `ApplyBidPayment`, если внешняя система (например, 1С) фиксирует оплату по заявке и должна передать в CARGO.RUN статус оплаты, дату оплаты, плановую дату оплаты, сумму остатка или комментарий.
 
 ### Тело запроса
+
+Тело описано моделью `BidPaymentWrapperModel`:
 
 ```json
 {
   "bidId": 0,
-  "paymentStatus": "Paid"
+  "payment": {
+    "paymentStatus": "Paid",
+    "factPaymentDate": "2026-06-30",
+    "planPaymentDate": "2026-07-05",
+    "invoiceDate": "2026-06-29",
+    "remainingPayment": 0,
+    "comment": "Оплата получена"
+  }
 }
 ```
 
+Поля:
+
+- `bidId` — идентификатор заявки;
+- `payment` — данные оплаты (`BidPaymentModel`);
+- `payment.paymentStatus` — статус оплаты, обязательное поле;
+- `payment.factPaymentDate` — фактическая дата оплаты;
+- `payment.planPaymentDate` — плановая дата оплаты;
+- `payment.invoiceDate` — дата счёта;
+- `payment.remainingPayment` — остаток к оплате;
+- `payment.comment` — комментарий по оплате.
+
 ### Поддерживаемые значения
 
-По перечислению `BidPaymentStatusEnum` в swagger:
+По перечислению `BidPaymentStatus` в swagger:
 
 - `NotPaid`
 - `PartiallyPaid`
 - `Paid`
 - `Expired`
-
-### Комментарии
-
-Метод используется, когда внешняя система (например, 1С) фиксирует оплату по заявке и должна передать статус оплаты в CARGO.RUN.
 
 ---
 
