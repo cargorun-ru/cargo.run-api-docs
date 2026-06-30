@@ -51,7 +51,7 @@ GET /api/Map/ReverseSearchAddresses?Latitude=55.74703593862486&Longitude=37.6166
 
 ## 2. Связанные методы
 
-В Swagger также есть методы:
+Также доступны методы:
 
 - `GET /api/Map/SearchAddresses`;
 - `GET /api/Map/GetTimezoneInfo`;
