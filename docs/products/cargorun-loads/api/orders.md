@@ -12,22 +12,56 @@ POST /api/Orders/Apply
 
 Метод создает новый заказ или обновляет существующий.
 
+Если `id = 0`, создается новый заказ. Если `id` содержит ID существующего заказа, метод обновляет этот заказ.
+
+Перед обновлением заказа рекомендуется получить его текущую карточку через `GET /api/Orders/GetInfo?Id={order_id}` и отправлять изменения с учетом актуальных точек маршрута и справочных ID. Возможность изменения отдельных полей зависит от состояния заказа: после выбора перевозчика или завершения перевозки часть данных может быть недоступна для редактирования.
+
 ### Основные поля запроса
 
-| Поле | Тип | Описание |
-|---|---|---|
-| `id` | `long` | `0` для создания нового заказа |
-| `organizationId` | `long` | ID организации владельца заказа |
-| `points` | `ApplyOrderPointModel[]` | Точки маршрута |
-| `orderPriceType` | `OrderPriceType` | Тип цены: фикс, аукцион или предложение цены |
-| `orderCost` | `double?` | Стоимость заказа |
-| `accessType` | `OrderAccessType?` | Видимость заказа |
-| `visibleForOrganizationsIds` | `long[]` | Перевозчики, которым виден заказ |
-| `trailerTypeIds` | `long[]` | Требуемые типы прицепов |
-| `contactPersonName` | `string` | Контактное лицо |
-| `contactPersonPhoneNumber` | `string` | Телефон контакта |
-| `externalId` | `string` | ID во внешней системе |
-| `externalInternalId` | `string` | Дополнительный внешний номер |
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | `0` для создания нового заказа, ID заказа для обновления |
+| `organizationId` | `long` | Да | ID организации владельца заказа |
+| `withoutMatching` | `boolean` | Да | Заказ без подбора перевозчика |
+| `requireHealthBook` | `boolean` | Да | Требуется медкнижка |
+| `carryingCapacity` | `int` | Да | Грузоподъемность |
+| `points` | `ApplyOrderPointModel[]` | Обычно да | Точки маршрута |
+| `orderPriceType` | `OrderPriceType?` | Обычно да | Тип цены: фикс, аукцион или предложение цены |
+| `orderCost` | `double?` | Нет | Стоимость заказа для заказчика |
+| `invitedFleetPrice` | `double?` | Нет | Стоимость для перевозчика при ручном назначении или заказе без торгов |
+| `ndsTypeId` | `long?` | Нет | Тип НДС заказчика из `NdsType` |
+| `paymentTypeId` | `long?` | Нет | Тип оплаты |
+| `cargoTypeId` | `long?` | Нет | Тип груза |
+| `cargoCost` | `double?` | Нет | Стоимость груза |
+| `cargoWeight` | `double?` | Нет | Вес груза |
+| `packTypeIds` | `long[]` | Нет | Типы упаковки |
+| `packCount` | `int?` | Нет | Количество упаковок/мест |
+| `accessType` | `OrderAccessType?` | Нет | Видимость заказа |
+| `visibleForOrganizationsIds` | `long[]` | Нет | Перевозчики, которым виден заказ |
+| `trailerTypeIds` | `long[]` | Нет | Требуемые типы полуприцепов |
+| `counterpartyId` | `long?` | Нет | Заказчик/контрагент |
+| `contactPersonName` | `string` | Нет | Контактное лицо |
+| `contactPersonPhoneNumber` | `string` | Нет | Телефон контакта |
+| `externalId` | `string` | Нет | ID во внешней системе |
+| `externalInternalId` | `string` | Нет | Дополнительный внешний номер |
+
+Обязательность в таблице отражает модель API. На практике для полноценного заказа также нужны маршрут, тип цены, контактные данные и параметры видимости.
+
+### Модель точки маршрута
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | `0` для новой точки, ID существующей точки при обновлении |
+| `index` | `int` | Да | Порядок точки в маршруте |
+| `pointType` | `PointType` | Да | Тип точки: погрузка, выгрузка или транзит |
+| `location` | `MapObjectApplyModel` | Обычно да | Адрес и координаты |
+| `planEnterTime` | `string?` | Нет | Плановое время прибытия |
+| `maxPlanEnterTime` | `string?` | Нет | Максимальное плановое время прибытия |
+| `loadUnloadTypeId` | `long?` | Нет | Тип загрузки/выгрузки |
+| `counterpartyId` | `long?` | Нет | Контрагент в точке |
+| `contactPersonName` | `string?` | Нет | Контактное лицо в точке |
+| `contactPersonPhoneNumber` | `string?` | Нет | Телефон контакта в точке |
+| `comment` | `string?` | Нет | Комментарий по точке |
 
 ### Пример
 
@@ -83,6 +117,33 @@ POST /api/Orders/Apply
 }
 ```
 
+### Ответ
+
+При успешном создании или обновлении метод возвращает модель заказа с сохраненными ID. Для дальнейшей работы сохраните `id` заказа и при необходимости запустите заказ через `POST /api/Orders/StartOrder?Id={order_id}`.
+
+```json
+{
+  "id": 1552780,
+  "organizationId": 33249,
+  "externalId": "TMS-100500",
+  "orderCost": 80000,
+  "orderPriceType": 10,
+  "points": [
+    {
+      "id": 2435200,
+      "index": 0,
+      "pointType": 10
+    }
+  ]
+}
+```
+
+### Что делать дальше
+
+1. Если заказ создан как черновик, запустите его в работу через `POST /api/Orders/StartOrder?Id={order_id}`.
+2. Получите карточку через `GET /api/Orders/GetInfo?Id={order_id}` и проверьте статус, маршрут и видимость.
+3. Для синхронизации изменений используйте `GET /api/Orders/GetIntegrationList`.
+
 ---
 
 ## 2. Получение списка заказов для интеграции
@@ -129,27 +190,66 @@ GET /api/Orders/GetIntegrationList?$filter=updatedAt gt 2026-06-30T16:37:14.1383
 
 ### Ответ
 
+Если изменений нет, метод возвращает пустой массив:
+
+```json
+{
+  "data": [],
+  "totalCount": 0
+}
+```
+
+Если изменились два заказа, оба появятся в `data[]`:
+
 ```json
 {
   "data": [
     {
-      "id": 1552769,
-      "status": 40,
-      "bidStatus": 60,
-      "updatedAt": "2026-06-30T16:33:51.12787+00:00",
-      "createdAt": "2026-06-30T16:32:54.03118+00:00",
-      "orderCost": 138000,
-      "invitedFleetPrice": 129000,
+      "id": 1552779,
+      "status": 35,
+      "bidStatus": 41,
+      "updatedAt": "2026-06-30T17:30:15.140773+00:00",
+      "createdAt": "2026-06-30T16:35:35.894124+00:00",
+      "orderCost": 129000,
+      "invitedFleetPrice": 125600,
       "orderPriceType": 10,
       "ndsTypeId": 71,
       "points": []
+    },
+    {
+      "id": 1552780,
+      "status": 10,
+      "bidStatus": null,
+      "updatedAt": "2026-06-30T17:31:02.122152+00:00",
+      "createdAt": "2026-06-30T16:37:11.918522+00:00",
+      "orderCost": 25000,
+      "invitedFleetPrice": 23000,
+      "orderPriceType": 10,
+      "ndsTypeId": 1,
+      "points": []
     }
   ],
-  "totalCount": 1
+  "totalCount": 2
 }
 ```
 
-Элементы `data[]` содержат основные поля заказа, включая `id`, `status`, `bidStatus`, `updatedAt`, `createdAt`, `orderCost`, `invitedFleetPrice`, `orderPriceType`, `ndsTypeId` и `points`.
+Элементы `data[]` содержат основные поля заказа, включая:
+
+| Поле | Описание |
+|---|---|
+| `id` | ID заказа |
+| `status` | Статус заказа |
+| `bidStatus` | Статус заявки/выполнения |
+| `createdAt` | Дата создания |
+| `updatedAt` | Дата последнего изменения |
+| `orderCost` | Стоимость заказчика |
+| `invitedFleetPrice` | Стоимость перевозчика |
+| `ndsTypeId` | Тип НДС заказчика |
+| `transporterNdsTypeId` | Тип НДС перевозчика |
+| `orderPriceType` | Тип стоимости |
+| `transporter` | Краткая информация о перевозчике |
+| `truck`, `driver`, `trailer` | Краткие данные ТС, водителя и прицепа |
+| `points` | Точки маршрута |
 
 Часть детальных данных может отсутствовать в списке. Для получения перевозчика, ТС, водителя, названий НДС и полного маршрута используйте `GET /api/Orders/GetInfo`.
 
@@ -178,6 +278,20 @@ GET /api/Orders/GetInfo?Id={order_id}
 | `truckNumber` | Номер ТС |
 | `driverFullName` | ФИО водителя |
 | `factEnterTimeOffset`, `factLeaveTimeOffset` | Фактические времена в точках |
+
+### Основные блоки карточки
+
+| Блок | Поля |
+|---|---|
+| Основные данные | `id`, `status`, `bidStatus`, `createdAt`, `externalId`, `externalInternalId` |
+| Стоимость заказчика | `orderCost`, `ndsTypeId`, `ndsTypeName`, `paymentTypeName`, `paymentStatusName` |
+| Заказчик и владелец | `counterpartyId`, `counterpartyName`, `organizationId`, `organizationName` |
+| Перевозчик | `transporterInfo`, `transporterNdsType`, `invitedFleetPrice` |
+| ТС и водитель | `truckNumber`, `truckModelType`, `trailerNumber`, `driverFullName`, `driverPhoneNumber` |
+| Груз | `cargoCost`, `cargoType`, `cargoWeight`, `packTypeNames`, `packCount`, `volume` |
+| Маршрут | `points[]` |
+| Отклики | `matchingCars[]`, `matchingsCount`, `orderTruckMatchingId` |
+| Торги | `auction`, `offersFixAt`, `offersAreFixed`, `offersAreFinished` |
 
 ### Поля для выгрузки в учетную систему
 
