@@ -4,7 +4,7 @@
 
 Общие принципы работы API и авторизации см.:
 
-- [Обзор API](./_overview.md)
+- [Обзор API](./overview.md)
 - [Auth API](../api/auth.md)
 
 ---
@@ -29,7 +29,7 @@ GET /api/1c/bills/gettitles
 - `statusDate` — дата и время изменения статуса;
 - `bill` — данные по накладной (`WaybillExternalModel`).
 
-[Статусы титулов ЭТРН](../statuses.md#4-статусы-титулов-этрн)
+[Статусы титулов ЭТРН](../statuses.md)
 
 #### Параметры запроса
 

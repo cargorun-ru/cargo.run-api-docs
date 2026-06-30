@@ -1,0 +1,123 @@
+site_name: CARGO.RUN Документация
+site_description: Документация API продуктов CARGO.RUN
+site_url: https://cargorun-ru.github.io/cargo.run-api-docs/
+repo_url: https://github.com/cargorun-ru/cargo.run-api-docs
+repo_name: cargorun-ru/cargo.run-api-docs
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+site_dir: site
+exclude_docs: |
+  README.md
+  products/cargorun-logistics/api/_overview.md
+
+theme:
+  name: material
+  language: ru
+  logo: assets/cargorun-logo.png
+  favicon: assets/cargorun-logo.png
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Тёмная тема
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Светлая тема
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search:
+      lang:
+        - ru
+        - en
+
+nav:
+  - Главная: index.md
+  - CARGO.RUN Логистика:
+      - Обзор продукта: products/cargorun-logistics/index.md
+      - Введение: products/cargorun-logistics/introduction.md
+      - Минимальные требования: products/cargorun-logistics/minimal-requirements.md
+      - Форматы данных: products/cargorun-logistics/formats.md
+      - Статусы: products/cargorun-logistics/statuses.md
+      - Глоссарий: products/cargorun-logistics/glossary.md
+      - Интеграция:
+          - Обзор: products/cargorun-logistics/integration/overview.md
+          - CARGO.RUN → учётная система: products/cargorun-logistics/integration/scenario-cr-to-external.md
+          - Учётная система → CARGO.RUN: products/cargorun-logistics/integration/scenario-external-to-cr.md
+          - Синхронизация данных: products/cargorun-logistics/integration/sync.md
+          - Примеры для 1С: products/cargorun-logistics/integration/examples-1c.md
+      - API:
+          - Обзор API: products/cargorun-logistics/api/overview.md
+          - Авторизация: products/cargorun-logistics/api/auth.md
+          - Заявки: products/cargorun-logistics/api/bids.md
+          - Заказы: products/cargorun-logistics/api/distribution-bids.md
+          - Справочники: products/cargorun-logistics/api/directories.md
+          - ЭТРН: products/cargorun-logistics/api/etrn.md
+          - Транзакции заправок: products/cargorun-logistics/api/refueling-transactions.md
+          - Трекеры: products/cargorun-logistics/api/trackers.md
+  - CARGO.RUN Загрузки:
+      - Обзор продукта: products/cargorun-loads/index.md
+      - Введение: products/cargorun-loads/introduction.md
+      - Минимальные требования: products/cargorun-loads/minimal-requirements.md
+      - Форматы данных: products/cargorun-loads/formats.md
+      - Статусы: products/cargorun-loads/statuses.md
+      - Глоссарий: products/cargorun-loads/glossary.md
+      - Интеграция:
+          - Обзор: products/cargorun-loads/integration/overview.md
+          - CARGO.RUN → учётная система: products/cargorun-loads/integration/scenario-cr-to-external.md
+          - Учётная система → CARGO.RUN: products/cargorun-loads/integration/scenario-external-to-cr.md
+          - Перевозчик: products/cargorun-loads/integration/scenario-transporter.md
+          - Отклики на заказы: products/cargorun-loads/integration/order-responses.md
+          - Синхронизация данных: products/cargorun-loads/integration/sync.md
+          - Примеры для 1С: products/cargorun-loads/integration/examples-1c.md
+      - API:
+          - Обзор API: products/cargorun-loads/api/overview.md
+          - Авторизация: products/cargorun-loads/api/auth.md
+          - Заказы: products/cargorun-loads/api/orders.md
+          - Жизненный цикл заказа: products/cargorun-loads/api/order-lifecycle.md
+          - Отклики на заказы: products/cargorun-loads/api/order-responses.md
+          - Перевозчик: products/cargorun-loads/api/transporter.md
+          - Справочники: products/cargorun-loads/api/directories.md
+          - Карта: products/cargorun-loads/api/map.md
+  - CARGO.RUN Маршрутизация:
+      - YATRS API: products/cargorun-yatrs/yatrs.md
+  - CARGO.RUN Iris:
+      - Обзор продукта: products/cargorun-iris/index.md
+      - Авторизация и организации: products/cargorun-iris/Iris_autorization.md
+      - API Iris: products/cargorun-iris/Iris_API.md
+      - Модели и типы: products/cargorun-iris/Iris_types_and_models.md

@@ -1,0 +1,51 @@
+:root {
+  --md-primary-fg-color: #050505;
+  --md-primary-fg-color--light: #1f1f1f;
+  --md-primary-fg-color--dark: #000000;
+  --md-accent-fg-color: #ffd200;
+}
+
+.md-header,
+.md-tabs {
+  background-color: #050505;
+  color: #ffd200;
+}
+
+.md-header__button,
+.md-header__title,
+.md-header__topic,
+.md-tabs__link {
+  color: #ffd200;
+}
+
+.md-header__button:hover,
+.md-tabs__link:hover,
+.md-tabs__link--active {
+  color: #fff3a0;
+}
+
+.md-search__form {
+  background-color: rgba(255, 210, 0, 0.16);
+}
+
+.md-search__input,
+.md-search__icon {
+  color: #ffd200;
+}
+
+.md-header__title {
+  font-weight: 700;
+}
+
+.md-typeset h1,
+.md-typeset h2 {
+  font-weight: 700;
+}
+
+.md-typeset table:not([class]) {
+  font-size: 0.72rem;
+}
+
+.md-typeset code {
+  border-radius: 4px;
+}

@@ -8,7 +8,7 @@
 
 Общие принципы работы API описаны в:
 
-- [Обзор API](../api/_overview.md)
+- [Обзор API](../api/overview.md)
 - [Auth API](../api/auth.md)
 
 ---
