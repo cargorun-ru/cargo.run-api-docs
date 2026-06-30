@@ -19,19 +19,18 @@
 
 ## 2. Подготовка справочников
 
-Перед созданием заказа обычно нужны:
+Перед созданием заказа получите ID справочных значений, которые будут переданы в `POST /api/Orders/Apply`.
 
-| Данные | Метод |
+| Что получить | Куда передать |
 |---|---|
-| Тип груза | `GET /api/CargoType/SelectByOrganizationList` |
-| Тип упаковки | `GET /api/PackType/SelectList` |
-| Типы прицепов | `GET /api/OrganizationAccount/GetAllowedTrailerTypeList` |
-| Тип погрузки/выгрузки | `GET /api/LoadUnloadType/SelectList` |
-| Контрагенты | `GET /api/Orders/SelectCounterpartyByOrganizationList` |
-| Авторы заказа | `GET /api/Orders/SelectAuthorByOrganizationList` |
-| Перевозчики | `GET /api/Organization/SelectRelationsOrganizationsList` |
-| Тип НДС | `GET /api/NdsType/SelectList` |
-| Тип оплаты | `GET /api/PaymentType/SelectList` |
+| Тип НДС | `ndsTypeId` |
+| Тип груза | `cargoTypeId` |
+| Тип упаковки | `packTypeIds` |
+| Типы полуприцепов | `trailerTypeIds` |
+| Заказчика/контрагента | `counterpartyId` |
+| Перевозчиков для видимости | `visibleForOrganizationsIds` |
+
+Методы получения справочников описаны в разделе [Справочники](../api/directories.md).
 
 ---
 
@@ -43,9 +42,18 @@
 POST /api/Orders/Apply
 ```
 
-Основные поля:
+Если `id = 0`, создается новый заказ. Если передан ID существующего заказа, метод обновляет заказ.
 
-- `organizationId` — организация владельца заказа;
+Минимальные технически обязательные поля:
+
+- `id`;
+- `organizationId`;
+- `withoutMatching`;
+- `requireHealthBook`;
+- `carryingCapacity`.
+
+Для полноценного заказа обычно также нужны:
+
 - `points` — точки маршрута;
 - `orderPriceType` — тип цены;
 - `orderCost` — стоимость;
@@ -55,7 +63,21 @@ POST /api/Orders/Apply
 - `contactPersonName`, `contactPersonPhoneNumber` — контакт по заказу;
 - `externalId`, `externalInternalId` — идентификаторы внешней системы.
 
-Минимальные требования описаны в разделе [Минимальные требования](../minimal-requirements.md).
+Подробная модель запроса описана в разделе [Orders API](../api/orders.md). Минимальные требования описаны в разделе [Минимальные требования](../minimal-requirements.md).
+
+После успешного создания сохраните ID заказа CARGO.RUN. Он нужен для запуска, обновления и дальнейшей синхронизации.
+
+### Обновление заказа
+
+Для обновления заказа используйте тот же метод `POST /api/Orders/Apply`, но передайте существующий `id`.
+
+Перед обновлением рекомендуется:
+
+1. Получить текущую карточку через `GET /api/Orders/GetInfo?Id={order_id}`.
+2. Изменить нужные поля.
+3. Отправить обновленную модель через `POST /api/Orders/Apply`.
+
+Часть полей может быть недоступна для изменения после запуска заказа, выбора перевозчика или завершения перевозки.
 
 ---
 
@@ -109,5 +131,5 @@ POST /api/OrderTruckMatchings/Accept
 Пример:
 
 ```http
-GET /api/Orders/GetIntegrationList?$filter=updatedAt ge 2026-06-01T00:00:00.000Z&$top=100
+GET /api/Orders/GetIntegrationList?$filter=updatedAt gt 2026-06-30T16:37:14.138307%2B00:00&$orderby=updatedAt asc&$top=100
 ```
