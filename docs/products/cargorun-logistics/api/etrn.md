@@ -2,8 +2,6 @@
 
 Этот раздел описывает методы API CARGO.RUN для работы с электронными транспортными накладными (ЭТРН) со стороны внешних систем, включая 1С и провайдеров ЭТРН.
 
-В актуальной версии API используется терминология `Waybill`. Прежние названия с `EBill` считаются устаревшими.
-
 Общие принципы работы API и авторизации см.:
 
 - [Обзор API](./_overview.md)
@@ -11,40 +9,9 @@
 
 ---
 
-## 1. Что изменилось
+## 1. Методы для 1С
 
-### 1.1. Методы внешней Waybill-интеграции
-
-Контроллер:
-
-```text
-/api/ebill/Bids -> /api/waybill/Bids
-```
-
-Используйте актуальные методы:
-
-| Было | Стало | Примечание |
-|------|-------|------------|
-| `GET /api/ebill/Bids/Get/{bidId}` | `GET /api/waybill/Bids/Get/{bidId}` | Получение данных заявки для ЭТРН. |
-| `GET /api/ebill/Bids/GetLoadPoints` | `GET /api/waybill/Bids/GetLoadPoints` | Получение активных точек загрузки для формирования первого титула. |
-| `POST /api/ebill/Bids/BatchMarkBidPoints` | `POST /api/waybill/Bids/BatchMarkBidPoints` | Массовая отметка точек как переданных в обработку. |
-| `POST /api/ebill/Bids/ApplyTitle` | `POST /api/waybill/Bids/ApplyTitle` | Сохранение титула по заявке. |
-| `GET /api/ebill/Bids/GetAcceptedTitles` | `GET /api/waybill/Bids/GetAcceptedTitles` | Получение принятых титулов. В ответе используются обновлённые значения `WaybillTitleStatus`. |
-| `POST /api/ebill/Bids/BatchMarkTitles` | `POST /api/waybill/Bids/BatchMarkTitles` | Массовая отметка титулов как переданных в обработку. |
-| `POST /api/ebill/Bids/ApplyQrCodes` | `POST /api/waybill/Bids/ApplyQrCodes` | Сохранение QR-кодов по титулу. |
-| `GET /api/ebill/Bids/GetTitleSignatures` | `GET /api/waybill/Bids/GetTitleSignatures` | Получение электронных подписей титулов. |
-| `POST /api/ebill/Bids/BatchMarkTitleSignatures` | `POST /api/waybill/Bids/BatchMarkTitleSignatures` | Массовая отметка подписей как переданных в обработку. |
-| `GET /api/ebill/Bids/GetPaymentDetailsList` | `GET /api/waybill/Bids/GetPaymentDetailsList` | Получение реквизитов и данных для оплаты. |
-
-### 1.2. Методы 1С
-
-Методы `/api/1c/Bills/...` остаются без изменения. Изменились только значения статусов титулов: вместо `TitleStatus` используется `WaybillTitleStatus`.
-
----
-
-## 2. Методы для 1С
-
-### 2.1. Получение списка титулов со статусами
+### 1.1. Получение списка титулов со статусами
 
 ```http
 GET /api/1c/bills/gettitles
@@ -89,7 +56,7 @@ GET /api/1c/bills/gettitles?$filter=status eq 'ReceivedOrCreated'
 GET /api/1c/bills/gettitles?$orderby=statusDate desc&$top=50
 ```
 
-### 2.2. Получение титула по заявке
+### 1.2. Получение титула по заявке
 
 ```http
 GET /api/1c/Bills/GetTitle?titleId={titleId}&bidId={bidId}&bidExternalId={bidExternalId}
@@ -118,7 +85,7 @@ GET /api/1c/Bills/GetTitle?titleId={titleId}&bidId={bidId}&bidExternalId={bidExt
 - статус и дату статуса;
 - комментарии и замечания, если есть.
 
-### 2.3. Смена статуса титула
+### 1.3. Смена статуса титула
 
 ```http
 POST /api/1c/bills/applystatus
@@ -160,19 +127,19 @@ POST /api/1c/bills/applystatus
 
 | Значение | Описание |
 |----------|----------|
-| `ReceivedOrCreated` | Титул получен или создан системой. Ранее использовалось значение `Received`. |
+| `ReceivedOrCreated` | Титул получен или создан системой. |
 | `Accepted` | Титул принят. |
 | `Signed` | Титул подписан. |
-| `Sent` | Титул передан на отправку. Ранее использовалось значение `SentToCrEBill`. |
+| `Sent` | Титул передан на отправку. |
 | `Processed` | Титул обработан. |
 | `Declined` | Титул отклонён. |
 | `Failed` | При обработке титула возникла ошибка. |
 
 ---
 
-## 3. Методы внешней Waybill-интеграции
+## 2. Методы внешней Waybill-интеграции
 
-Эти методы используются внешним сервисом ЭТРН для обмена данными с CARGO.RUN. Они заменяют прежние методы `/api/ebill/Bids/...`.
+Эти методы используются внешним сервисом ЭТРН для обмена данными с CARGO.RUN.
 
 | Метод | Описание |
 |-------|----------|
@@ -189,9 +156,9 @@ POST /api/1c/bills/applystatus
 
 ---
 
-## 4. Enum'ы и переименования
+## 3. Enum'ы
 
-### 4.1. WaybillProviderType
+### 3.1. WaybillProviderType
 
 Флаговый enum провайдера ЭТРН:
 
@@ -201,26 +168,24 @@ POST /api/1c/bills/applystatus
 | `Astral` | `1` | Провайдер Астрал. |
 | `Kontur` | `2` | Провайдер Контур. |
 
-### 4.2. WaybillTitleStatus
+### 3.2. WaybillTitleStatus
 
-`TitleStatus` переименован в `WaybillTitleStatus`.
+| Значение | Код | Описание |
+|----------|-----|----------|
+| `ReceivedOrCreated` | `0` | Титул получен или создан системой. |
+| `Accepted` | `1` | Титул принят. |
+| `Signed` | `2` | Титул подписан. |
+| `Sent` | `3` | Титул передан на отправку. |
+| `Processed` | `4` | Титул обработан. |
+| `Declined` | `5` | Титул отклонён. |
+| `Failed` | `6` | При обработке титула возникла ошибка. |
 
-| Актуальное значение | Код | Ранее |
-|---------------------|-----|-------|
-| `ReceivedOrCreated` | `0` | `Received` |
-| `Accepted` | `1` | Без изменений |
-| `Signed` | `2` | Новое значение |
-| `Sent` | `3` | `SentToCrEBill` |
-| `Processed` | `4` | Новое значение |
-| `Declined` | `5` | Без изменений |
-| `Failed` | `6` | Новое значение |
+### 3.3. Дополнительные значения
 
-### 4.3. Прочие переименования
-
-| Enum | Актуальное значение | Ранее |
-|------|---------------------|-------|
-| `FeatureModuleType` | `Waybills = 32` | `EBills` |
-| `Role` | `WaybillIntegrationAccount = 180` | `EBillIntegrationAccount` |
-| `UserMessageType` | `Waybills = 80` | `EBills` |
-| `PushType` | `WaybillQrCodes = 8` | `EBillQrCodes` |
-| `PushTemplateType` | `WaybillQrCodes = 12` | `EBillQrCodes` |
+| Enum | Значение | Код |
+|------|----------|-----|
+| `FeatureModuleType` | `Waybills` | `32` |
+| `Role` | `WaybillIntegrationAccount` | `180` |
+| `UserMessageType` | `Waybills` | `80` |
+| `PushType` | `WaybillQrCodes` | `8` |
+| `PushTemplateType` | `WaybillQrCodes` | `12` |
