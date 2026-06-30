@@ -29,18 +29,77 @@ GET /api/PackType/SelectList?$filter=id eq 42
 
 ## 2. Справочники для создания заказа
 
-| Справочник | Метод |
-|---|---|
-| Тип груза | `GET /api/CargoType/SelectByOrganizationList` |
-| Типы упаковки | `GET /api/PackType/SelectList` |
-| Типы прицепов | `GET /api/OrganizationAccount/GetAllowedTrailerTypeList` |
-| Тип загрузки/погрузки | `GET /api/LoadUnloadType/SelectList` |
-| Контрагент | `GET /api/Orders/SelectCounterpartyByOrganizationList` |
-| Автор заказа | `GET /api/Orders/SelectAuthorByOrganizationList` |
-| Перевозчики | `GET /api/Organization/SelectRelationsOrganizationsList` |
-| Тип НДС | `GET /api/NdsType/SelectList` |
-| Тип оплаты | `GET /api/PaymentType/SelectList` |
-| Причины отмены | `GET /api/CancellationReasons/SelectByOrderList` |
+Перед созданием заказа внешняя система обычно получает значения справочников и сохраняет у себя соответствие `id` и `name`. В заказ передается ID справочного значения.
+
+| Что нужно заполнить | Поле в заказе | Метод |
+|---|---|---|
+| Тип груза | `cargoTypeId` | `GET /api/CargoType/SelectByOrganizationList` |
+| Типы упаковки | `packTypeIds` | `GET /api/PackType/SelectList` |
+| Типы полуприцепов | `trailerTypeIds` | `GET /api/OrganizationAccount/GetAllowedTrailerTypeList` |
+| Тип загрузки/выгрузки в точке | `points[].loadUnloadTypeId` | `GET /api/LoadUnloadType/SelectList` |
+| Заказчик/контрагент | `counterpartyId` | `GET /api/Orders/SelectCounterpartyByOrganizationList` |
+| Автор заказа | `authorId` | `GET /api/Orders/SelectAuthorByOrganizationList` |
+| Перевозчики для видимости | `visibleForOrganizationsIds` | `GET /api/Organization/SelectRelationsOrganizationsList` |
+| Тип НДС заказчика | `ndsTypeId` | `GET /api/NdsType/SelectList` |
+| Тип НДС перевозчика | `transporterNdsTypeId` | `GET /api/NdsType/SelectList` |
+| Тип оплаты | `paymentTypeId` | `GET /api/PaymentType/SelectList` |
+| Причины отмены | `cancellationReasonIds` | `GET /api/CancellationReasons/SelectByOrderList?OrderId={order_id}` |
+
+Для обычной интеграции достаточно читать справочники. Методы создания и редактирования справочных значений не описаны в этом разделе, потому что они относятся к административным сценариям и могут быть недоступны интеграционному пользователю.
+
+### Пример: получить тип НДС
+
+```http
+GET /api/NdsType/SelectList
+Authorization: Bearer <access_token>
+```
+
+Ответ:
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Без НДС" },
+    { "id": 71, "name": "НДС 22%" }
+  ],
+  "totalCount": 2
+}
+```
+
+Чтобы создать заказ без НДС, передайте:
+
+```json
+{
+  "ndsTypeId": 1
+}
+```
+
+### Пример: получить типы полуприцепов
+
+```http
+GET /api/OrganizationAccount/GetAllowedTrailerTypeList?OrganizationId={organization_id}
+Authorization: Bearer <access_token>
+```
+
+Ответ:
+
+```json
+{
+  "data": [
+    { "id": 122, "name": "Тент" },
+    { "id": 12, "name": "Рефрижератор" }
+  ],
+  "totalCount": 2
+}
+```
+
+Чтобы создать заказ с требованием к тентованному полуприцепу, передайте:
+
+```json
+{
+  "trailerTypeIds": [122]
+}
+```
 
 ---
 
