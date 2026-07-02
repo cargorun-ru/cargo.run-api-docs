@@ -146,7 +146,196 @@ POST /api/Orders/Apply
 
 ---
 
-## 2. Получение списка заказов для интеграции
+## 2. Получение списка своих заказов
+
+```http
+GET /api/Orders/GetList
+```
+
+Метод возвращает список заказов, созданных текущей организацией. Используйте его для просмотра своих заказов в табличном виде: в ответе есть основные параметры заказа, маршрут в укороченном виде, стоимость, статусы, участники, назначенный транспорт и служебные признаки.
+
+Для получения полной карточки конкретного заказа используйте `GET /api/Orders/GetInfo?Id={order_id}`.
+
+### Query-параметры
+
+| Параметр | Описание |
+|---|---|
+| `$filter` | Фильтр по полям модели |
+| `$orderby` | Сортировка по полям модели |
+| `$top` | Ограничение количества записей |
+| `$skip` | Смещение |
+
+### Пример
+
+```http
+GET /api/Orders/GetList?$orderby=createdAt desc&$top=50&$skip=0
+```
+
+### Ответ
+
+Метод возвращает объект со списком заказов и общим количеством найденных записей:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `data` | `OrderListModel[]` | Массив заказов |
+| `totalCount` | `long?` | Общее количество записей, подходящих под фильтр |
+
+Если заказов нет, `data` может быть пустым массивом.
+
+```json
+{
+  "data": [
+    {
+      "id": 1552780,
+      "locationFrom": null,
+      "locationTo": "посёлок Овощной",
+      "regionFrom": "Ростовская область",
+      "regionTo": "Ростовская область",
+      "addressFrom": "Москва, Софийская набережная, 14с1",
+      "addressTo": "Республика Татарстан, Казань",
+      "loadStart": "2026-07-01T10:00:00+03:00",
+      "unloadStart": "2026-07-02T10:00:00+03:00",
+      "loadDistrictsNames": ["Южный федеральный округ"],
+      "loadDistrictsIds": [8],
+      "unloadDistrictsNames": ["Южный федеральный округ"],
+      "unloadDistrictsIds": [8],
+      "organizationName": "ltgf",
+      "organizationId": 33249,
+      "distanceKm": 815.4,
+      "trailerTypeNames": ["Тент"],
+      "orderPriceType": 10,
+      "accessType": 30,
+      "orderCost": 80000,
+      "createdAt": "2026-06-30T16:37:11.918522+00:00",
+      "status": 10,
+      "bidStatus": null,
+      "isDeleted": false,
+      "acceptedMatchingsCount": 0,
+      "withoutMatching": false,
+      "externalId": "TMS-100500",
+      "externalStatus": null,
+      "counterpartyName": "ООО \"Делаем выгрузки\"",
+      "isGuaranteed": false,
+      "comment": null,
+      "transporterOrganizationId": null,
+      "transporterOrganizationName": null,
+      "truckNumber": null,
+      "driverFullName": null,
+      "trailerNumber": null,
+      "gpsEnabled": false,
+      "isReserved": false,
+      "reservationHolderName": null,
+      "cargoTypeName": "Продукты питания",
+      "sourceType": 90
+    }
+  ],
+  "totalCount": 1
+}
+```
+
+### Поля заказа в `data[]`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID заказа |
+| `locationFrom` | `string?` | Населенный пункт первой точки маршрута |
+| `locationTo` | `string?` | Населенный пункт последней точки маршрута |
+| `regionFrom` | `string?` | Регион первой точки маршрута |
+| `regionTo` | `string?` | Регион последней точки маршрута |
+| `addressFrom` | `string?` | Адрес первой точки маршрута |
+| `addressTo` | `string?` | Адрес последней точки маршрута |
+| `loadStart` | `date-time?` | Начало планового окна погрузки |
+| `loadFinish` | `date-time?` | Окончание планового окна погрузки |
+| `loadTimezoneId` | `string?` | Часовой пояс точки погрузки |
+| `unloadStart` | `date-time?` | Начало планового окна выгрузки |
+| `unloadFinish` | `date-time?` | Окончание планового окна выгрузки |
+| `unloadTimezoneId` | `string?` | Часовой пояс точки выгрузки |
+| `loadDistrictsNames` | `string[]?` | Названия округов/районов точки погрузки |
+| `loadDistrictsIds` | `long[]?` | ID округов/районов точки погрузки |
+| `unloadDistrictsNames` | `string[]?` | Названия округов/районов точки выгрузки |
+| `unloadDistrictsIds` | `long[]?` | ID округов/районов точки выгрузки |
+| `organizationName` | `string?` | Название организации владельца заказа |
+| `organizationId` | `long` | ID организации владельца заказа |
+| `distanceKm` | `double?` | Расстояние маршрута в километрах |
+| `trailerTypeNames` | `string[]?` | Названия требуемых типов полуприцепов |
+| `pointsCount` | `int?` | Количество точек маршрута |
+| `orderPriceType` | `OrderPriceType?` | Тип стоимости: `10` фиксированная, `20` аукцион, `30` предложение цены |
+| `offersFixAt` | `date-time?` | Время фиксации предложений |
+| `offersAreFixed` | `boolean?` | Признак, что предложения зафиксированы |
+| `accessType` | `OrderAccessType` | Видимость заказа: `10` всем, `20` связанным организациям, `30` выбранным связанным организациям |
+| `visibleForOrganizationsIds` | `long[]?` | ID организаций, которым виден заказ |
+| `visibleForOrganizationNames` | `string[]?` | Названия организаций, которым виден заказ |
+| `orderCost` | `double?` | Стоимость заказа для заказчика |
+| `orderCostDeviationPercent` | `double?` | Отклонение стоимости в процентах |
+| `createdAt` | `date-time` | Дата и время создания заказа |
+| `status` | `OrderStatus` | Статус заказа: `5` черновик, `10` новый, `20` в поиске, `25` есть отклики, `30` в работе, `35` в пути, `40` завершен, `50` отменен |
+| `bidStatus` | `BidStatus?` | Статус заявки/выполнения: `20` черновик, `25` запланирована, `30` начата, `40` на погрузке, `41` загружена, `42` на выгрузке, `43` выгружена, `50` отменена, `60` выполнена |
+| `isDeleted` | `boolean` | Признак удаления заказа |
+| `acceptedMatchingsCount` | `int` | Количество принятых откликов |
+| `auctionOffersCount` | `int?` | Количество предложений в аукционе |
+| `withoutMatching` | `boolean` | Заказ без подбора перевозчика |
+| `output` | `double?` | Расчетный показатель вывода/результата |
+| `hasDocuments` | `boolean?` | Есть ли документы по заказу |
+| `externalId` | `string?` | ID заказа во внешней системе |
+| `externalNumber` | `string?` | Внешний номер заказа |
+| `externalStatus` | `string?` | Внешний статус заказа |
+| `atrucksExternalNumber` | `string?` | Устаревший внешний номер Atrucks |
+| `authorFullName` | `string?` | ФИО автора заказа |
+| `authorId` | `long?` | ID автора заказа |
+| `responsibleFullName` | `string?` | ФИО ответственного |
+| `responsibleId` | `long?` | ID ответственного |
+| `hasAuctionWinner` | `boolean` | Есть ли победитель аукциона |
+| `counterpartyId` | `long?` | ID контрагента заказчика |
+| `counterpartyName` | `string?` | Название контрагента заказчика |
+| `isMandatory` | `boolean?` | Признак обязательности заказа |
+| `isGuaranteed` | `boolean?` | Признак гарантированного заказа |
+| `isInternal` | `boolean?` | Внутренний заказ |
+| `comment` | `string?` | Комментарий по заказу |
+| `forwarderComment` | `string?` | Комментарий экспедитора |
+| `transporterOrganizationId` | `long?` | ID выбранного перевозчика |
+| `transporterOrganizationName` | `string?` | Название выбранного перевозчика |
+| `truckNumber` | `string?` | Госномер ТС |
+| `driverFullName` | `string?` | ФИО водителя |
+| `trailerNumber` | `string?` | Госномер прицепа |
+| `logistFullName` | `string?` | ФИО логиста |
+| `legalEntityName` | `string?` | Юридическое лицо |
+| `userUniqueViewCount` | `long?` | Количество уникальных просмотров пользователями |
+| `anonymousUniqueViewCount` | `long?` | Количество уникальных анонимных просмотров |
+| `integrationSyncStatusType` | `IntegrationSyncStatusType?` | Статус синхронизации: `10` в процессе, `20` успешно, `30` ошибка |
+| `sovcominsInsuranceStatus` | `SovcominsInsuranceStatus?` | Статус страхования Совкоминс |
+| `paymentStatusId` | `long?` | ID статуса оплаты |
+| `paymentStatusName` | `string?` | Название статуса оплаты |
+| `integrationOrderId` | `string?` | ID заказа в интеграции |
+| `externalCreatedAt` | `date-time?` | Дата создания заказа во внешней системе |
+| `counterpartyContactPerson` | `string?` | Контактное лицо контрагента |
+| `minTemperature` | `int?` | Минимальная температура перевозки |
+| `maxTemperature` | `int?` | Максимальная температура перевозки |
+| `volume` | `double?` | Объем груза |
+| `confirmationRequested` | `boolean?` | Запрошено подтверждение |
+| `gpsEnabled` | `boolean` | Включено GPS-отслеживание |
+| `isTemporaryTruck` | `boolean?` | Используется временное ТС |
+| `isReserved` | `boolean?` | Заказ находится в резерве |
+| `reservationAuthorId` | `long?` | ID автора резервирования |
+| `reservationAuthorName` | `string?` | Имя автора резервирования |
+| `reservationHolderId` | `long?` | ID пользователя, за которым зарезервирован заказ |
+| `reservationHolderName` | `string?` | Имя пользователя, за которым зарезервирован заказ |
+| `reservationEndDate` | `date-time?` | Дата и время окончания резервирования |
+| `orderPoints` | `OrderPointForFactLoadUnloadTimesModel[]?` | Фактические времена прибытия/выезда в точках |
+| `cargoTypeId` | `long?` | ID типа груза |
+| `cargoTypeName` | `string?` | Название типа груза |
+| `sourceType` | `SourceType` | Источник заказа: например `90` Integration |
+| `loadsParserServiceType` | `SourceType?` | Источник/сервис парсера загрузок |
+
+### Поля точки в `orderPoints[]`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `factEnterLoadUnloadTime` | `date-time` | Фактическое время прибытия на погрузку или выгрузку |
+| `factLeaveLoadUnloadTime` | `date-time?` | Фактическое время выезда с погрузки или выгрузки |
+
+---
+
+## 3. Получение списка заказов для интеграции
 
 ```http
 GET /api/Orders/GetIntegrationList
@@ -255,7 +444,7 @@ GET /api/Orders/GetIntegrationList?$filter=updatedAt gt 2026-06-30T16:37:14.1383
 
 ---
 
-## 3. Получение деталей заказа
+## 4. Получение деталей заказа
 
 ```http
 GET /api/Orders/GetInfo?Id={order_id}
@@ -434,7 +623,7 @@ GET /api/Orders/GetInfo?Id={order_id}
 
 ---
 
-## 4. Связанные разделы
+## 5. Связанные разделы
 
 - [Жизненный цикл заказа](./order-lifecycle.md)
 - [Отклики и выбор перевозчика](./order-responses.md)
