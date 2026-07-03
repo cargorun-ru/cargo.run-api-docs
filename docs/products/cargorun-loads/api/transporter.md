@@ -12,14 +12,35 @@ GET /api/TransporterOrders/GetList
 
 Метод возвращает заказы, доступные текущей организации перевозчика.
 
-Поддерживает:
+Используется для получения списка заказов, доступных перевозчику для выполнения: как заказов своей организации, так и чужих доступных заказов. В интерфейсе соответствует разделу **«Поиск заказов»**.
 
-- `$filter`;
-- `$orderby`;
-- `$top`;
-- `$skip`.
+Для получения полной карточки конкретного заказа используйте `GET /api/TransporterOrders/GetInfo?id={order_id}`.
+
+### Query-параметры
+
+| Параметр | Описание |
+|---|---|
+| `$filter` | Фильтр по полям модели |
+| `$orderby` | Сортировка по полям модели |
+| `$top` | Ограничение количества записей |
+| `$skip` | Смещение |
+
+### Пример
+
+```http
+GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
+```
 
 ### Ответ
+
+Метод возвращает объект со списком доступных заказов и общим количеством найденных записей:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `data` | `TransporterOrderWithMatchingsListModel[]` | Массив доступных заказов |
+| `totalCount` | `long?` | Общее количество записей, подходящих под фильтр |
+
+Если заказов нет, `data` может быть пустым массивом.
 
 ```json
 {
@@ -37,27 +58,45 @@ GET /api/TransporterOrders/GetList
       "pointsCount": 2,
       "orderPriceType": 10,
       "orderCost": 25000,
-      "accessType": 30
+      "accessType": 30,
+      "output": 678.49,
+      "subscribeFilterId": null
     }
   ],
   "totalCount": 1
 }
 ```
 
-Основные поля `data[]`:
+### Поля заказа в `data[]`
 
-| Поле | Описание |
-|---|---|
-| `id` | ID заказа |
-| `addressFrom`, `addressTo` | Первый и последний адрес маршрута |
-| `loadStart`, `loadFinish` | Плановый интервал погрузки |
-| `unloadStart`, `unloadFinish` | Плановый интервал выгрузки |
-| `organizationName`, `organizationId` | Владелец заказа |
-| `distanceKm` | Расстояние |
-| `trailerTypeNames` | Требуемые типы полуприцепов |
-| `pointsCount` | Количество точек маршрута |
-| `orderPriceType` | Тип цены |
-| `orderCost` | Стоимость заказа |
+В модели `TransporterOrderWithMatchingsListModel` из актуального swagger нет отдельных полей населенных пунктов, например `locationFrom` и `locationTo`. Для отображения маршрута в списке доступны полные адреса `addressFrom` и `addressTo`.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID заказа |
+| `addressFrom` | `string?` | Адрес первой точки маршрута |
+| `addressTo` | `string?` | Адрес последней точки маршрута |
+| `loadStart` | `date-time?` | Начало планового окна погрузки |
+| `loadFinish` | `date-time?` | Окончание планового окна погрузки |
+| `loadTimezoneId` | `string?` | Часовой пояс точки погрузки |
+| `unloadStart` | `date-time?` | Начало планового окна выгрузки |
+| `unloadFinish` | `date-time?` | Окончание планового окна выгрузки |
+| `unloadTimezoneId` | `string?` | Часовой пояс точки выгрузки |
+| `organizationName` | `string?` | Название организации владельца заказа |
+| `organizationId` | `long` | ID организации владельца заказа |
+| `distanceKm` | `double?` | Расстояние маршрута в километрах |
+| `trailerTypeNames` | `string[]?` | Названия требуемых типов полуприцепов |
+| `pointsCount` | `int?` | Количество точек маршрута |
+| `orderPriceType` | `OrderPriceType?` | Тип стоимости: `10` фиксированная, `20` аукцион, `30` предложение цены |
+| `offersFixAt` | `date-time?` | Время фиксации предложений |
+| `offersAreFixed` | `boolean?` | Признак, что предложения зафиксированы |
+| `accessType` | `OrderAccessType` | Видимость заказа: `10` всем, `20` связанным организациям, `30` выбранным связанным организациям |
+| `visibleForOrganizationsIds` | `long[]?` | ID организаций, которым виден заказ |
+| `visibleForOrganizationNames` | `string[]?` | Названия организаций, которым виден заказ |
+| `orderCost` | `double?` | Стоимость заказа для заказчика |
+| `orderCostDeviationPercent` | `double?` | Отклонение стоимости в процентах |
+| `output` | `double?` | Расчетный показатель вывода/результата |
+| `subscribeFilterId` | `long?` | ID фильтра подписки, по которому заказ попал в список |
 
 ---
 
