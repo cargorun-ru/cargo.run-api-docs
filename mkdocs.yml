@@ -86,7 +86,9 @@ nav:
           - Авторизация: products/cargorun-logistics/api/auth.md
           - Заявки: products/cargorun-logistics/api/bids.md
           - Заказы: products/cargorun-logistics/api/distribution-bids.md
+          - Контрагенты: products/cargorun-logistics/api/counterparties.md
           - Справочники: products/cargorun-logistics/api/directories.md
+          - Пользовательские справочники: products/cargorun-logistics/api/custom-catalogs.md
           - ЭТРН: products/cargorun-logistics/api/etrn.md
           - Транзакции заправок: products/cargorun-logistics/api/refueling-transactions.md
           - Трекеры: products/cargorun-logistics/api/trackers.md

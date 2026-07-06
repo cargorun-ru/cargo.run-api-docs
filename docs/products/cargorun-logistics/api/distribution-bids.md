@@ -73,6 +73,78 @@ GET /api/distributionbids/getlistforexternal
 
 Ответ — массив `DistributionBidForExternalSyncModel`.
 
+### Основные поля ответа `DistributionBidForExternalSyncModel`
+
+Метод возвращает массив заказов на распределение. Общее количество записей передается в заголовке `X-MetaCount`.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID заказа |
+| `bidId` | `long?` | ID заявки, созданной на основании заказа; `null`, если заказ не распределен |
+| `status` | `DistributionBidStatus` | Внутренний статус заказа |
+| `counterpartyId` | `long?` | ID контрагента |
+| `counterparty` | `CounterpartyViewModel?` | Контрагент |
+| `contractId` | `long?` | ID договора контрагента |
+| `contactPersonId` | `long?` | ID контактного лица |
+| `contactPerson` | `ContactPersonViewModel?` | Контактное лицо |
+| `createdAt` | `date-time` | Дата создания |
+| `updatedAt` | `date-time` | Дата последнего изменения |
+| `createdById` | `long` | ID создателя |
+| `createdBy` | `ShortNameModel?` | Пользователь, создавший заказ |
+| `paymentTypeId` | `long?` | Тип оплаты |
+| `ndsTypeId` | `long?` | Тип НДС |
+| `hourlyPrice` | `double?` | Почасовая ставка |
+| `price` | `double?` | Стоимость |
+| `priceWithoutVatOnTop` | `double?` | Стоимость без НДС, если НДС сверху |
+| `isVatTop` | `boolean?` | НДС начисляется сверху |
+| `externalId` | `string?` | Внешний ID |
+| `contractNumber` | `string?` | Номер договора |
+| `comment` | `string?` | Комментарий |
+| `clientBidNumber` | `string?` | Номер заявки клиента |
+| `clientBidDate` | `date-time?` | Дата заявки клиента |
+| `sourceType` | `SourceType` | Источник заказа |
+| `paymentPeriodInDays` | `int?` | Срок оплаты в днях |
+| `paymentPeriodType` | `PaymentPeriodType?` | Вариант срока оплаты |
+| `invoiceTriggerType` | `InvoiceTriggerType?` | Основание для выставления счета |
+| `documents` | `RelatedDocumentModel[]?` | Документы |
+| `hasHiredCar` | `boolean` | Используется наемный транспорт |
+| `hiredCarCounterpartyId` | `long?` | ID перевозчика наемного транспорта |
+| `hiredCarId` | `long?` | ID наемного транспорта |
+| `hiredTrailerId` | `long?` | ID прицепа наемного транспорта |
+| `hiredDriverId` | `long?` | ID водителя наемного транспорта |
+| `hiredCarPrice` | `double?` | Стоимость наемного транспорта |
+| `isHiredCarVatTop` | `boolean` | НДС сверху по наемному транспорту |
+| `hiredCarNdsTypeId` | `long?` | Тип НДС наемного транспорта |
+| `hiredCarPaymentTypeId` | `long?` | Тип оплаты перевозчику |
+| `hiredCarPaymentPeriodInDays` | `int?` | Срок оплаты перевозчику |
+| `hiredCarCompletedAtOffset` | `date-time?` | Ручная дата выполнения со смещением часового пояса |
+| `hiredCarCompletedAt` | `date-time?` | Ручная дата выполнения |
+| `lastSyncStatus` | `SyncEntityStatus` | Последний статус синхронизации |
+| `legalPersonId` | `long?` | ID юридического лица |
+| `isMandatory` | `boolean` | Обязательный заказ |
+| `isDeleted` | `boolean` | Заказ удален |
+| `createDocumentAssignment` | `boolean` | Создавать задание сдачи документов после завершения |
+| `extendedProperties` | `ExtendedPropertyJsonObject[]?` | Дополнительные поля |
+| `hiredCarCounterparty` | `CounterpartyViewModel?` | Перевозчик наемного транспорта |
+| `hiredCar` | `HiredVehicleViewModel?` | Наемный транспорт |
+| `hiredTrailer` | `HiredVehicleViewModel?` | Прицеп наемного транспорта |
+| `hiredDriver` | `HiredDriverViewModel?` | Водитель наемного транспорта |
+| `cargos` | `CargoModel[]?` | Грузы |
+| `bidPoints` | `DistributionBidPointViewModel[]?` | Точки заказа |
+| `typeOptions` | `TypeOptionModel[]?` | Пользовательские справочники и настраиваемые опции |
+| `hasUploadedFile` | `boolean` | Загружен файл заказа |
+| `isPreBid` | `boolean` | Предзаявка |
+| `accessPermitIds` | `long[]?` | Допуски и разрешения |
+
+### Поля `typeOptions[]`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID элемента пользовательского справочника |
+| `entityOptionId` | `long` | ID настройки/свойства справочника |
+
+Чтобы получить значение элемента, запросите `GET /api/Catalogs/GetItems?$filter=id eq {typeOptions[].id}`. Подробнее: [Пользовательские справочники](./custom-catalogs.md).
+
 ---
 
 ### 2.2. Получение статусов внешних заказов
@@ -194,7 +266,16 @@ POST /api/distributionbids/revert
 
 ---
 
-## 7. Сводная таблица методов
+## 5. Сводная таблица методов
 
 | Метод | Описание |
 |-------|----------|
+| `POST /api/DistributionBids/Apply` | Создание и обновление заказов на распределение |
+| `GET /api/DistributionBids/GetListForExternal` | Список заказов для внешней синхронизации |
+| `GET /api/DistributionBids/GetListForExternalStatuses` | Получение статусов внешних заказов |
+| `GET /api/DistributionBids/Get/{id}` | Получение одного заказа по ID |
+| `GET /api/DistributionBids/GetForBid/{id}` | Получение заказа по ID заявки |
+| `POST /api/DistributionBids/Cancel` | Отмена заказа |
+| `POST /api/DistributionBids/Delete` | Удаление заказа |
+| `POST /api/DistributionBids/Restore` | Восстановление удаленного заказа |
+| `POST /api/DistributionBids/Revert` | Возврат отмененного заказа |

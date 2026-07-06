@@ -212,6 +212,75 @@ GET /api/bids/getlistforexternal
 
 - [Синхронизация данных](../integration/sync.md)
 
+### Основные поля ответа `BidForExternalSyncModel`
+
+Метод возвращает массив заявок. Общее количество записей передается в заголовке `X-MetaCount`.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID заявки |
+| `status` | `BidStatus` | Статус заявки |
+| `price` | `double?` | Цена |
+| `priceWithoutVatOnTop` | `double?` | Цена без НДС, если НДС сверху |
+| `createdAt` | `date-time` | Дата создания заявки |
+| `updatedAt` | `date-time` | Дата последнего изменения |
+| `externalUpdatedAt` | `date-time?` | Дата обновления из внешней системы |
+| `createdById` | `long` | ID пользователя, создавшего заявку |
+| `approvedById` | `long?` | ID пользователя, согласовавшего заявку |
+| `approvedAt` | `date-time?` | Дата согласования |
+| `responsibleId` | `long?` | ID ответственного |
+| `salesManagerId` | `long?` | ID менеджера по продажам |
+| `carLogistId` | `long?` | ID логиста автомобиля на момент создания заявки |
+| `paymentTypeId` | `long` | Тип оплаты |
+| `ndsTypeId` | `long` | Тип НДС |
+| `isVatTop` | `boolean` | НДС начисляется сверху |
+| `counterpartyId` | `long?` | ID контрагента |
+| `contractId` | `long?` | ID договора контрагента |
+| `distributionBidId` | `long?` | ID заказа, из которого создана заявка |
+| `routeId` | `long?` | ID маршрута |
+| `driverId` | `long?` | ID текущего водителя |
+| `secondaryDriverId` | `long?` | ID второго водителя |
+| `isDriverForwarder` | `boolean` | Водитель является экспедитором |
+| `acceptedByDriverAt` | `date-time?` | Дата принятия заявки водителем |
+| `acceptedByDriverForwarderAt` | `date-time?` | Дата принятия водителем-экспедитором |
+| `car` | `CarSimpleModel?` | Автомобиль |
+| `trailer` | `TrailerListViewModel?` | Прицеп |
+| `legalPerson` | `IdModel?` | Юридическое лицо |
+| `bidPoints` | `BidPointViewModel[]?` | Точки маршрута |
+| `cargos` | `CargoModel[]?` | Грузы |
+| `typeOptions` | `TypeOptionModel[]?` | Пользовательские справочники и дополнительные опции |
+| `temperatureRegime` | `BidTemperatureRegimeModel?` | Температурный режим |
+| `temperature` | `TemperatureValueModel?` | Текущая температура |
+| `documents` | `RelatedDocumentModel[]?` | Документы |
+| `extendedProperties` | `ExtendedPropertyJsonObject[]?` | Дополнительные поля заявки |
+| `externalId` | `string?` | Внешний ID |
+| `contractNumber` | `string?` | Номер договора |
+| `comment` | `string?` | Комментарий |
+| `clientBidNumber` | `string?` | Номер заявки клиента |
+| `clientBidDate` | `date-time?` | Дата заявки клиента |
+| `paymentPeriodInDays` | `int?` | Срок оплаты в днях |
+| `paymentPeriodType` | `PaymentPeriodType?` | Вариант срока оплаты |
+| `sourceType` | `SourceType` | Источник заявки |
+| `hasFactoring` | `boolean` | Заявка отправлена на факторинг |
+| `isEmptyMileageBid` | `boolean` | Порожняя заявка |
+| `isInternational` | `boolean` | Международная заявка |
+| `hasItemsChange` | `boolean` | Есть перецепка/пересменка |
+| `isDeleted` | `boolean` | Заявка удалена |
+| `createDocumentAssignment` | `boolean` | Создавать задание сдачи документов после завершения |
+| `hasServicePoints` | `boolean` | Есть точки сервисных работ |
+| `isPreBid` | `boolean` | Предзаявка |
+| `payment` | `BidPaymentGetModel?` | Информация об оплате |
+| `accessPermitIds` | `long[]?` | Допуски и разрешения |
+
+### Поля `typeOptions[]`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID элемента пользовательского справочника |
+| `entityOptionId` | `long` | ID настройки/свойства справочника |
+
+Чтобы получить человекочитаемое значение элемента, запросите `GET /api/Catalogs/GetItems?$filter=id eq {typeOptions[].id}`. Подробнее: [Пользовательские справочники](./custom-catalogs.md).
+
 ---
 
 # 5. Получение связанных данных
