@@ -127,6 +127,9 @@ GET /api/TransporterOrders/GetInfo?id={order_id}
 POST /api/TransporterOrderTruckMatchings/ApplyMatching
 ```
 
+Метод используется, если данные ТС, водителя или прицепа заполняются из справочников.
+
+
 Основные поля:
 
 | Поле | Описание |
@@ -206,7 +209,140 @@ POST /api/TransporterOrderTruckMatchings/ApplyManualMatching
 
 ---
 
-## 5. Изменение и удаление отклика
+## 5. Просмотр отклика
+
+```http
+GET /api/TransporterOrderTruckMatchings/Get?orderTruckMatchingId={matching_id}
+```
+
+Метод возвращает созданный отклик перевозчика на заказ. Используйте его, когда нужно открыть уже отправленный отклик и получить сохраненные данные: контакт логиста, ставку, ТС, прицеп, водителя, НДС и признаки временно введенных сущностей.
+
+### Query-параметры
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `orderTruckMatchingId` | `long` | ID отклика |
+
+### Ответ
+
+```json
+{
+  "id": 43587716,
+  "orderId": 1552780,
+  "logistFullName": "Иванов Иван",
+  "logistPhoneNumber": "79999999999",
+  "price": 23000,
+  "truck": {
+    "id": 1001,
+    "trailerTypeId": 1,
+    "modelTypeId": 12,
+    "number": "Х777ХХ16",
+    "ownershipTypeId": 2,
+    "ownerName": "ООО \"Перевозчик\"",
+    "ownerInn": "1234567890",
+    "sourceType": 10,
+    "isRented": false,
+    "organizationId": 95713
+  },
+  "trailer": {
+    "id": 2001,
+    "ownershipTypeId": 2,
+    "ownerName": "ООО \"Перевозчик\"",
+    "ownerInn": "1234567890",
+    "number": "А123ВС77",
+    "isRented": false,
+    "organizationId": 95713
+  },
+  "driver": {
+    "id": 3001,
+    "lastName": "Петров",
+    "firstName": "Петр",
+    "patronymic": "Петрович",
+    "phoneNumber": "79999999999",
+    "organizationId": 95713
+  },
+  "ndsTypeId": 1,
+  "isTemporaryTruck": false,
+  "isTemporaryDriver": false,
+  "isTemporaryTrailer": false,
+  "isForwarding": false,
+  "forwardingOrganizationId": null
+}
+```
+
+### Поля отклика
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID отклика |
+| `orderId` | `long` | ID заказа |
+| `logistFullName` | `string?` | ФИО контактного лица перевозчика по отклику |
+| `logistPhoneNumber` | `string?` | Телефон контактного лица перевозчика |
+| `price` | `double?` | Ставка перевозчика |
+| `truck` | `TransporterOrderTruckMatchingTruckModel?` | Тягач |
+| `trailer` | `TransporterOrderTruckMatchingTrailerModel?` | Прицеп |
+| `driver` | `TransporterOrderTruckMatchingDriverModel?` | Водитель |
+| `ndsTypeId` | `long?` | Тип НДС |
+| `isTemporaryTruck` | `boolean` | Тягач введен вручную/временно |
+| `isTemporaryDriver` | `boolean` | Водитель введен вручную/временно |
+| `isTemporaryTrailer` | `boolean` | Прицеп введен вручную/временно |
+| `isForwarding` | `boolean` | Отклик создан как экспедирование |
+| `forwardingOrganizationId` | `long?` | ID экспедиторской организации |
+
+### Поля `truck`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID тягача |
+| `trailerTypeId` | `long?` | Тип полуприцепа/кузова |
+| `modelTypeId` | `long?` | Тип/модель ТС |
+| `number` | `string?` | Госномер тягача |
+| `ownershipTypeId` | `long?` | Тип владения |
+| `ownerName` | `string?` | Собственник |
+| `ownerInn` | `string?` | ИНН собственника |
+| `sourceType` | `SourceType` | Источник данных ТС |
+| `isRented` | `boolean` | ТС арендованное |
+| `organizationId` | `long` | ID организации перевозчика |
+
+### Поля `trailer`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID прицепа |
+| `ownershipTypeId` | `long?` | Тип владения |
+| `ownerName` | `string?` | Собственник |
+| `ownerInn` | `string?` | ИНН собственника |
+| `number` | `string?` | Госномер прицепа |
+| `isRented` | `boolean` | Прицеп арендованный |
+| `organizationId` | `long` | ID организации перевозчика |
+
+### Поля `driver`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID водителя |
+| `lastName` | `string?` | Фамилия |
+| `firstName` | `string?` | Имя |
+| `patronymic` | `string?` | Отчество |
+| `phoneNumber` | `string?` | Телефон |
+| `passportSeries` | `string?` | Серия паспорта |
+| `passportNumber` | `string?` | Номер паспорта |
+| `passportGivenBy` | `string?` | Кем выдан паспорт |
+| `passportGivenWhen` | `date-time?` | Когда выдан паспорт |
+| `organizationId` | `long` | ID организации перевозчика |
+
+Для получения данных, необходимых именно для формы редактирования отклика, используется:
+
+```http
+GET /api/TransporterOrderTruckMatchings/GetForEditMatching?Id={matching_id}&IsNew=false
+```
+
+Метод возвращает `EditOrderTruckMatchingModel`: `id`, `truck`, `trailer`, `driver`, `isForwarding`.
+
+
+---
+
+## 6. Изменение и удаление отклика
 
 | Действие | Метод |
 |---|---|
@@ -241,7 +377,7 @@ POST /api/TransporterOrderTruckMatchings/Delete?Id={matching_id}
 
 ---
 
-## 6. Получение назначенной заявки
+## 7. Получение назначенной заявки
 
 ```http
 GET /api/TransporterBids/GetInfo?id={order_id}
@@ -251,7 +387,7 @@ GET /api/TransporterBids/GetInfo?id={order_id}
 
 ---
 
-## 7. Передача фактических времен по точкам
+## 8. Передача фактических времен по точкам
 
 ```http
 POST /api/TransporterBids/ApplyOrderPointFactTimes
@@ -281,7 +417,7 @@ POST /api/TransporterBids/ApplyOrderPointFactTimes
 
 ---
 
-## 8. Справочники перевозчика
+## 9. Справочники перевозчика
 
 | Сущность | Список | Создание/редактирование | Удаление |
 |---|---|---|---|
