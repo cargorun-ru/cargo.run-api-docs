@@ -314,14 +314,7 @@ POST /api/CounterpartyContactPeople/Delete?Id={contact_person_id}&IsNew=false
 
 ## 4. Надежность контрагента
 
-Ранее для черного списка использовались методы:
-
-```http
-POST /api/Counterparty/ApplyIsInBlacklist
-GET /api/Counterparty/GetIsInBlacklist?Id={counterparty_id}
-```
-
-Эти методы считаются устаревшими. Вместо них используйте надежность контрагента:
+Для управлением показателями надежности контрагента используются методы:
 
 ```http
 POST /api/Counterparty/ApplyTrust
@@ -350,7 +343,6 @@ GET /api/Counterparty/GetTrust?Id={counterparty_id}
 | `10` | Требует проверки |
 | `20` | Ненадежный |
 
-Поле `isInBlacklist` в `List` и `GetForView` также считается устаревшим. Для новых интеграций используйте поле `trust`.
 
 ---
 
