@@ -37,7 +37,7 @@ GET /api/PackType/SelectList?$filter=id eq 42
 | Типы упаковки | `packTypeIds` | `GET /api/PackType/SelectList` |
 | Типы полуприцепов | `trailerTypeIds` | `GET /api/OrganizationAccount/GetAllowedTrailerTypeList` |
 | Тип загрузки/выгрузки в точке | `points[].loadUnloadTypeId` | `GET /api/LoadUnloadType/SelectList` |
-| Заказчик/контрагент | `counterpartyId` | `GET /api/Orders/SelectCounterpartyByOrganizationList` |
+| [Заказчик/контрагент](./counterparties.md) | `counterpartyId` | `GET /api/Orders/SelectCounterpartyByOrganizationList` |
 | Автор заказа | `authorId` | `GET /api/Orders/SelectAuthorByOrganizationList` |
 | Перевозчики для видимости | `visibleForOrganizationsIds` | `GET /api/Organization/SelectRelationsOrganizationsList` |
 | Тип НДС заказчика | `ndsTypeId` | `GET /api/NdsType/SelectList` |
@@ -46,6 +46,8 @@ GET /api/PackType/SelectList?$filter=id eq 42
 | Причины отмены | `cancellationReasonIds` | `GET /api/CancellationReasons/SelectByOrderList?OrderId={order_id}` |
 
 Для обычной интеграции достаточно читать справочники. Методы создания и редактирования справочных значений не описаны в этом разделе, потому что они относятся к административным сценариям и могут быть недоступны интеграционному пользователю.
+
+Работа с контрагентами выделена в отдельный раздел: [Counterparties API](./counterparties.md). Там описаны создание, чтение, удаление, адреса, контактные лица, надежность и лимиты контрагентов.
 
 ### Пример: получить тип НДС
 
