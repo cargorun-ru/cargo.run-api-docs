@@ -77,6 +77,7 @@ Authorization: Bearer <access_token>
 | [Orders API](./orders.md) | Создание и получение заказов |
 | [Order Lifecycle API](./order-lifecycle.md) | Запуск, отмена, возврат в черновик, удаление |
 | [Order Responses API](./order-responses.md) | Отклики и выбор перевозчика |
+| [Отчеты API](./reports.md) | Данные заказов для отчетности и BI |
 | [Counterparties API](./counterparties.md) | Контрагенты, адреса, контактные лица, надежность и лимиты |
 | [Map API](./map.md) | Адреса, координаты и маршруты |
 | [Directories API](./directories.md) | Справочники |

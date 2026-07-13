@@ -113,6 +113,7 @@ nav:
           - Заказы: products/cargorun-loads/api/orders.md
           - Жизненный цикл заказа: products/cargorun-loads/api/order-lifecycle.md
           - Отклики на заказы: products/cargorun-loads/api/order-responses.md
+          - Отчеты: products/cargorun-loads/api/reports.md
           - Контрагенты: products/cargorun-loads/api/counterparties.md
           - Перевозчик: products/cargorun-loads/api/transporter.md
           - Справочники: products/cargorun-loads/api/directories.md
