@@ -1,20 +1,18 @@
-# Transporter API
+# Orders API
 
-Раздел описывает основные методы для сценария перевозчика.
+Раздел описывает основные методы работы с заказами экспедитора.
 
 ---
 
-## 1. Получение доступных заказов
+## 1. Получение списка заказов
 
 ```http
-GET /api/TransporterOrders/GetList
+GET /api/Orders/GetList
 ```
 
-Метод возвращает заказы, доступные текущей организации перевозчика.
+Метод возвращает список заказов организации экспедитора.
 
-Используется для получения списка заказов, доступных перевозчику для выполнения: как заказов своей организации, так и чужих доступных заказов. В интерфейсе соответствует разделу **«Поиск заказов»**.
-
-Для получения полной карточки конкретного заказа используйте `GET /api/TransporterOrders/GetInfo?id={order_id}`.
+Используйте метод для получения списка заказов с фильтрацией, сортировкой и постраничной загрузкой. Для получения полной карточки конкретного заказа используйте `GET /api/Orders/GetInfo?Id={order_id}`.
 
 ### Query-параметры
 
@@ -28,281 +26,86 @@ GET /api/TransporterOrders/GetList
 ### Пример
 
 ```http
-GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
+GET /api/Orders/GetList?$orderby=loadStart asc&$top=50&$skip=0
+```
+
+Фильтрация по населенным пунктам доступна через строковые поля `locationFrom` и `locationTo`:
+
+```http
+GET /api/Orders/GetList?$filter=contains(locationFrom,'Айдарово') and contains(locationTo,'Ильинское-Усово')&$top=50&$skip=0
 ```
 
 ### Ответ
 
-Метод возвращает объект со списком доступных заказов и общим количеством найденных записей:
+Метод возвращает объект со списком заказов и общим количеством найденных записей:
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `data` | `TransporterOrderWithMatchingsListModel[]` | Массив доступных заказов |
+| `data` | `OrderListModel[]` | Массив заказов |
 | `totalCount` | `long?` | Общее количество записей, подходящих под фильтр |
 
 Если заказов нет, `data` может быть пустым массивом.
 
-```json
-{
-  "data": [
-    {
-      "id": 1552780,
-      "addressFrom": "Ростовская область, Аксайский район, улица Логопарк, 5",
-      "addressTo": "Ростовская область, Аксай, улица Авиаторов, 5",
-      "loadStart": "2026-07-01T15:15:00+03:00",
-      "unloadStart": "2026-07-02T08:15:00+03:00",
-      "organizationName": "ltgf",
-      "organizationId": 95143,
-      "distanceKm": 30.5,
-      "trailerTypeNames": ["Рефрижератор"],
-      "pointsCount": 2,
-      "orderPriceType": 10,
-      "orderCost": 25000,
-      "accessType": 30,
-      "output": 678.49,
-      "subscribeFilterId": null
-    }
-  ],
-  "totalCount": 1
-}
-```
-
 ### Поля заказа в `data[]`
 
-В модели `TransporterOrderWithMatchingsListModel` из актуального swagger нет отдельных полей населенных пунктов, например `locationFrom` и `locationTo`. Для отображения маршрута в списке доступны полные адреса `addressFrom` и `addressTo`.
-
-| Поле | Тип | Описание |
-|---|---|---|
-| `id` | `long` | ID заказа |
-| `addressFrom` | `string?` | Адрес первой точки маршрута |
-| `addressTo` | `string?` | Адрес последней точки маршрута |
-| `loadStart` | `date-time?` | Начало планового окна погрузки |
-| `loadFinish` | `date-time?` | Окончание планового окна погрузки |
-| `loadTimezoneId` | `string?` | Часовой пояс точки погрузки |
-| `unloadStart` | `date-time?` | Начало планового окна выгрузки |
-| `unloadFinish` | `date-time?` | Окончание планового окна выгрузки |
-| `unloadTimezoneId` | `string?` | Часовой пояс точки выгрузки |
-| `organizationName` | `string?` | Название организации владельца заказа |
-| `organizationId` | `long` | ID организации владельца заказа |
-| `distanceKm` | `double?` | Расстояние маршрута в километрах |
-| `trailerTypeNames` | `string[]?` | Названия требуемых типов полуприцепов |
-| `pointsCount` | `int?` | Количество точек маршрута |
-| `orderPriceType` | `OrderPriceType?` | Тип стоимости: `10` фиксированная, `20` аукцион, `30` предложение цены |
-| `offersFixAt` | `date-time?` | Время фиксации предложений |
-| `offersAreFixed` | `boolean?` | Признак, что предложения зафиксированы |
-| `accessType` | `OrderAccessType` | Видимость заказа: `10` всем, `20` связанным организациям, `30` выбранным связанным организациям |
-| `visibleForOrganizationsIds` | `long[]?` | ID организаций, которым виден заказ |
-| `visibleForOrganizationNames` | `string[]?` | Названия организаций, которым виден заказ |
-| `orderCost` | `double?` | Стоимость заказа для заказчика |
-| `orderCostDeviationPercent` | `double?` | Отклонение стоимости в процентах |
-| `output` | `double?` | Расчетный показатель вывода/результата |
-| `subscribeFilterId` | `long?` | ID фильтра подписки, по которому заказ попал в список |
+--8<-- "includes/cargorun-loads/api/orders-getlist-fields.md"
 
 ---
 
-## 2. Получение деталей доступного заказа
+## 2. Получение карточки заказа
 
 ```http
-GET /api/TransporterOrders/GetInfo?id={order_id}
+GET /api/Orders/GetInfo?Id={order_id}
 ```
 
-Метод возвращает подробную информацию о заказе для перевозчика:
+Метод возвращает подробную информацию о заказе экспедитора:
 
 - маршрут;
 - груз;
-- тип цены;
-- стоимость;
-- отклики;
-- статус;
+- тип цены и стоимость;
+- отклики и назначение перевозчика;
+- статусы;
 - контактные данные;
-- ограничения и требования.
+- ограничения и требования;
+- служебные данные интеграции.
 
-Ответ использует модель `OrderInfoModel`, как и `GET /api/Orders/GetInfo`, но данные возвращаются с учетом прав текущей организации перевозчика. Если заказ больше не доступен перевозчику, метод может вернуть ошибку доступа или пустой результат в зависимости от бизнес-ситуации.
+### Query-параметры
 
----
-
-## 3. Создание отклика из справочников
-
-```http
-POST /api/TransporterOrderTruckMatchings/ApplyMatching
-```
-
-Основные поля:
-
-| Поле | Описание |
+| Параметр | Описание |
 |---|---|
-| `orderId` | ID заказа |
-| `logistFullName` | ФИО контактного лица перевозчика |
-| `logistPhoneNumber` | Телефон контактного лица |
-| `price` | Ставка |
-| `truck` | Тягач |
-| `trailer` | Прицеп |
-| `driver` | Водитель |
-| `ndsTypeId` | Тип НДС |
-| `isTemporaryTruck` | Временный тягач |
-| `isTemporaryDriver` | Временный водитель |
-| `isTemporaryTrailer` | Временный прицеп |
+| `Id` | ID заказа |
+| `IsNew` | Признак открытия новой карточки. Для чтения существующего заказа обычно не передается |
 
-Пример:
+### Ответ
 
-```json
-{
-  "id": 0,
-  "orderId": 1552780,
-  "logistFullName": "Иванов Иван",
-  "logistPhoneNumber": "79999999999",
-  "price": 23000,
-  "truck": {
-    "id": 1001,
-    "organizationId": 95713,
-    "sourceType": 10,
-    "isRented": false
-  },
-  "trailer": {
-    "id": 2001,
-    "organizationId": 95713,
-    "isRented": false
-  },
-  "driver": {
-    "id": 3001,
-    "organizationId": 95713
-  },
-  "ndsTypeId": 1,
-  "isTemporaryTruck": false,
-  "isTemporaryDriver": false,
-  "isTemporaryTrailer": false,
-  "isForwarding": false
-}
-```
+Метод возвращает модель `OrderInfoModel`.
 
-При успехе метод возвращает `200 OK` без тела ответа. После отправки отклика проверяйте заказ через `GET /api/TransporterOrders/GetInfo?id={order_id}`.
+### Дополнительные поля полной карточки
+
+--8<-- "includes/cargorun-loads/api/orders-getinfo-fields.md"
 
 ---
 
-## 4. Создание отклика с ручным заполнением
+## 3. Создание и обновление заказа
 
 ```http
-POST /api/TransporterOrderTruckMatchings/ApplyManualMatching
+POST /api/Orders/Apply
 ```
 
-Метод используется, если данные ТС, водителя или прицепа передаются вручную. При успешном выполнении отсутствующие сущности могут быть созданы.
+Метод используется для создания нового заказа или обновления существующего заказа.
 
-Основные поля:
+Для создания нового заказа передайте модель заказа без `id` или с `id = 0`. Для обновления передайте `id` существующего заказа и актуальные значения полей.
 
-| Поле | Описание |
-|---|---|
-| `id` | `0` для нового отклика |
-| `orderId` | ID заказа |
-| `truckNumber`, `trailerNumber` | Номера ТС и прицепа |
-| `driverLastName`, `driverFirstName`, `driverPatronymic` | ФИО водителя |
-| `driverPhoneNumber` | Телефон водителя |
-| `logistFullName`, `logistPhoneNumber` | Контакт перевозчика |
-| `price` | Ставка перевозчика |
-| `ndsTypeId` | Тип НДС |
-| `truckTrailerTypeId`, `truckModelTypeId`, `truckOwnershipTypeId` | Справочные данные ТС |
-| `trailerOwnershipTypeId` | Справочные данные прицепа |
-
-При успехе метод возвращает `200 OK` без тела ответа.
+Минимальный набор данных для создания заказа описан в разделе [Минимальные требования](../minimal-requirements.md).
 
 ---
 
-## 5. Изменение и удаление отклика
-
-| Действие | Метод |
-|---|---|
-| Изменить ставку | `POST /api/TransporterOrderTruckMatchings/EditMatchingPrice` |
-| Удалить отклик | `POST /api/TransporterOrderTruckMatchings/Delete` |
-| Отклонить отклик со стороны перевозчика | `POST /api/TransporterOrderTruckMatchings/Decline` |
-
-### Изменение ставки
-
-```json
-{
-  "id": 43587716,
-  "price": 24000
-}
-```
-
-### Удаление отклика
+## 4. Получение измененных заказов для интеграции
 
 ```http
-POST /api/TransporterOrderTruckMatchings/Delete?Id={matching_id}
+GET /api/Orders/GetIntegrationList
 ```
 
-### Отклонение отклика
+Метод используется для синхронизации с учетной системой: внешняя система получает заказы, измененные после сохраненной контрольной точки `updatedAt`.
 
-```json
-{
-  "id": 43587716
-}
-```
-
-При успехе эти методы возвращают `200 OK` без тела ответа.
-
----
-
-## 6. Получение назначенной заявки
-
-```http
-GET /api/TransporterBids/GetInfo?id={order_id}
-```
-
-Если метод возвращает карточку заказа, значит заказ назначен текущему перевозчику и стал заявкой. Ответ использует модель `OrderInfoModel`.
-
----
-
-## 7. Передача фактических времен по точкам
-
-```http
-POST /api/TransporterBids/ApplyOrderPointFactTimes
-```
-
-Используется для передачи фактического времени въезда и выезда по точке маршрута.
-
-### Тело запроса
-
-```json
-{
-  "id": 2435200,
-  "factEnterTimeOffset": "2026-07-01T15:25:00+03:00",
-  "factLeaveTimeOffset": "2026-07-01T16:10:00+03:00",
-  "clearAllNextPoints": false
-}
-```
-
-| Поле | Обязательность | Описание |
-|---|---|---|
-| `id` | Да | ID точки маршрута из `points[].id` |
-| `factEnterTimeOffset` | Нет | Фактическое время прибытия |
-| `factLeaveTimeOffset` | Нет | Фактическое время выезда |
-| `clearAllNextPoints` | Да | Очистить фактические времена следующих точек |
-
-При успехе метод возвращает `200 OK` без тела ответа. Обновленные времена появятся в `points[].factEnterTimeOffset` и `points[].factLeaveTimeOffset`.
-
----
-
-## 8. Справочники перевозчика
-
-| Сущность | Список | Создание/редактирование | Удаление |
-|---|---|---|---|
-| ТС | `GET /api/TransporterTruck/List` | `POST /api/TransporterTruck/Apply` | `POST /api/TransporterTruck/Delete` |
-| Прицепы | `GET /api/TransporterTrailer/List` | `POST /api/TransporterTrailer/Apply` | `POST /api/TransporterTrailer/Delete` |
-| Водители | `GET /api/TransporterDriver/List` | `POST /api/TransporterDriver/Apply` | `POST /api/TransporterDriver/Delete` |
-
-Удаление справочников перевозчика является мягким: данные остаются в базе, но становятся недоступны пользователям.
-
-Списки справочников возвращают стандартный ответ:
-
-```json
-{
-  "data": [
-    {
-      "id": 1001,
-      "number": "Х777ХХ16",
-      "sourceType": 10,
-      "updatedAt": "2026-06-30T16:30:00+00:00"
-    }
-  ],
-  "totalCount": 1
-}
-```
+Подробный сценарий описан в разделе [Синхронизация данных](../integration/sync.md).

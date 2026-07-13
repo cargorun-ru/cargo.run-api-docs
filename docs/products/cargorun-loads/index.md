@@ -74,6 +74,9 @@
 - Отклики и выбор перевозчика  
   [Order Responses API](./api/order-responses.md)
 
+- Отчетные данные для BI  
+  [Reports API](./api/reports.md)
+
 - Контрагенты, адреса и контактные лица  
   [Counterparties API](./api/counterparties.md)
 
@@ -88,4 +91,4 @@
 
 ---
 
-**Последнее обновление:** 2026-07-07
+**Последнее обновление:** 2026-07-13

@@ -31,6 +31,12 @@ GET /api/TransporterOrders/GetList
 GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
 ```
 
+Фильтрация по населенным пунктам доступна через строковые поля `locationFrom` и `locationTo`:
+
+```http
+GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдарово') and contains(locationTo,'Ильинское-Усово')&$top=50&$skip=0
+```
+
 ### Ответ
 
 Метод возвращает объект со списком доступных заказов и общим количеством найденных записей:
@@ -69,13 +75,15 @@ GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
 
 ### Поля заказа в `data[]`
 
-В модели `TransporterOrderWithMatchingsListModel` из актуального swagger нет отдельных полей населенных пунктов, например `locationFrom` и `locationTo`. Для отображения маршрута в списке доступны полные адреса `addressFrom` и `addressTo`.
+В модели `TransporterOrderWithMatchingsListModel` доступны отдельные строковые поля населенных пунктов `locationFrom` и `locationTo`. Их можно использовать для фильтрации по точкам отправления и назначения. Для отображения полного маршрута также доступны полные адреса `addressFrom` и `addressTo`.
 
 | Поле | Тип | Описание |
 |---|---|---|
 | `id` | `long` | ID заказа |
 | `addressFrom` | `string?` | Адрес первой точки маршрута |
 | `addressTo` | `string?` | Адрес последней точки маршрута |
+| `locationFrom` | `string?` | Населенный пункт отправления |
+| `locationTo` | `string?` | Населенный пункт назначения |
 | `loadStart` | `date-time?` | Начало планового окна погрузки |
 | `loadFinish` | `date-time?` | Окончание планового окна погрузки |
 | `loadTimezoneId` | `string?` | Часовой пояс точки погрузки |
@@ -117,7 +125,7 @@ GET /api/TransporterOrders/GetInfo?id={order_id}
 - контактные данные;
 - ограничения и требования.
 
-Ответ использует модель `OrderInfoModel`, как и `GET /api/Orders/GetInfo`, но данные возвращаются с учетом прав текущей организации перевозчика. Если заказ больше не доступен перевозчику, метод может вернуть ошибку доступа или пустой результат в зависимости от бизнес-ситуации.
+Ответ использует модель `TransporterOrderInfoModel`: данные возвращаются с учетом прав текущей организации перевозчика. Если заказ больше не доступен перевозчику, метод может вернуть ошибку доступа или пустой результат в зависимости от бизнес-ситуации.
 
 ---
 
