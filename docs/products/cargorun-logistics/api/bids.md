@@ -170,6 +170,142 @@ POST /api/truckingbids/apply
 - при создании статус заявки — `New` (черновик);
 - при ошибках валидации API возвращает HTTP 4xx с текстом ошибки.
 
+### Пример создания заявки
+
+В примере показан запрос на создание черновика заявки. Он адаптирован из payload фронта: служебные поля интерфейса и поля состояния не передаются, а `id` новых объектов указаны как `0`.
+
+```json
+{
+  "id": 0,
+  "cargoOwnerDictionaryItemId": 129647034,
+  "legalPersonId": 127039077,
+  "paymentTypeId": 41,
+  "ndsTypeId": 129493473,
+  "price": 45000,
+  "isVatTop": false,
+  "contractNumber": "324352352352",
+  "paymentPeriodType": "InCalendarDays",
+  "responsibleId": 1466813,
+  "isDriverForwarder": false,
+  "isEmptyMileageBid": false,
+  "createDocumentAssignment": false,
+  "driver": {
+    "id": 1478168
+  },
+  "carOption": {
+    "carId": 1465629
+  },
+  "trailerOption": {
+    "trailerId": 128820197
+  },
+  "bidPoints": [
+    {
+      "id": 0,
+      "order": 0,
+      "type": "LoadPoint",
+      "comment": "Комментарий к первой точке",
+      "planEnterDate": "2026-07-15T10:58:00",
+      "cargoOwnerDictionaryItemId": 129647035,
+      "geozone": {
+        "id": 0,
+        "location": {
+          "type": "Point",
+          "coordinates": [
+            47.4720139,
+            55.86623
+          ]
+        },
+        "city": "Цивильск",
+        "address": "Россия, Чувашская Республика — Чувашия, Цивильск, улица Гагарина",
+        "state": "Чувашская Республика — Чувашия",
+        "county": "Цивильский муниципальный округ",
+        "street": "улица Гагарина",
+        "houseNumber": null,
+        "federalDistrict": "Приволжский федеральный округ",
+        "radius": 2000,
+        "type": "BidPoint"
+      },
+      "contactPerson": {
+        "id": 129417981,
+        "phoneNumber": "+7 964 781-40-98",
+        "name": "Александр Пушкин"
+      },
+      "loadOptions": [
+        {
+          "id": 4612889
+        }
+      ],
+      "typeOptions": [],
+      "extendedProperties": []
+    },
+    {
+      "id": 0,
+      "order": 1,
+      "type": "UnloadPoint",
+      "comment": "Комментарий к выгрузке",
+      "planEnterDate": "2026-07-16T11:10:00",
+      "cargoOwnerDictionaryItemId": 129647014,
+      "geozone": {
+        "id": 0,
+        "location": {
+          "type": "Point",
+          "coordinates": [
+            55.9507846,
+            54.7017154
+          ]
+        },
+        "city": "Уфа",
+        "address": "Россия, Республика Башкортостан, Уфа, Сарапульская улица, 35",
+        "state": "Республика Башкортостан",
+        "county": "городской округ Уфа",
+        "street": "Сарапульская улица",
+        "houseNumber": "35",
+        "federalDistrict": "Приволжский федеральный округ",
+        "radius": 1999,
+        "type": "BidPoint"
+      },
+      "contactPerson": {
+        "id": 129417982,
+        "phoneNumber": "8 914 781 07 01",
+        "name": "Михаил Лермонтов"
+      },
+      "loadOptions": [
+        {
+          "id": 4612889
+        }
+      ],
+      "typeOptions": [],
+      "extendedProperties": []
+    }
+  ],
+  "cargos": [
+    {
+      "id": 0,
+      "name": "Крышки",
+      "weight": 20,
+      "volume": 5,
+      "length": 6,
+      "height": 8,
+      "width": 7,
+      "typeId": 712,
+      "packType": "Паллеты",
+      "comment": "Комментарий к грузу",
+      "extendedProperties": [],
+      "typeOptions": []
+    }
+  ],
+  "extendedProperties": [
+    {
+      "propertyName": "CustomeFieldForDemo",
+      "value": "Пример заполнения кастомного поля"
+    }
+  ],
+  "typeOptions": [],
+  "documents": [],
+  "accessPermitIds": []
+}
+```
+
 ---
 
 ## 1.2. Частичное обновление заявки (Patch)

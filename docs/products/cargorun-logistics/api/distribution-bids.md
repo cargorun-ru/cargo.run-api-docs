@@ -151,6 +151,158 @@ POST /api/distributionbids/apply
 |---|---|---|---|
 | `id` | `long` | Да | ID опции погрузки или выгрузки |
 
+### Пример создания заказа
+
+В примере показано создание заказа на распределение с двумя точками маршрута, грузом, наемным транспортом и пользовательским дополнительным полем.
+
+```json
+{
+  "items": [
+    {
+      "id": 0,
+      "externalStatus": "None",
+      "counterpartyId": 129647035,
+      "legalPersonId": 127039078,
+      "responsibleId": 1466813,
+      "price": 120000,
+      "paymentTypeId": 41,
+      "ndsTypeId": 129493473,
+      "paymentPeriodType": "InCalendarDays",
+      "paymentPeriodInDays": 30,
+      "invoiceTriggerType": "ByOriginal",
+      "trailerTypeId": 94325,
+      "hasHiredCar": true,
+      "isMandatory": true,
+      "hiredCarCounterpartyId": 129647034,
+      "hiredCarPrice": 115000,
+      "hiredCarCompletedAt": "2026-07-15T00:00:00",
+      "hiredCarNdsTypeId": 129493473,
+      "hiredCarPaymentTypeId": 41,
+      "hiredCarInvoiceTriggerType": "AtUnloading",
+      "hiredCarPaymentPeriodType": "InCalendarDays",
+      "hiredCarPaymentPeriodInDays": 30,
+      "hiredCarId": 301,
+      "hiredTrailerId": 182,
+      "hiredDriverId": 242,
+      "contractNumber": "324352352352",
+      "comment": "Произвольный комментарий к заказу",
+      "contactPerson": {
+        "name": "Владимир Высоцкий",
+        "phoneNumber": "+7 (962) 568-85-39"
+      },
+      "bidPoints": [
+        {
+          "id": 0,
+          "order": 0,
+          "type": "LoadPoint",
+          "planEnterDate": "2026-07-13T13:55",
+          "counterpartyId": 129647035,
+          "comment": "Произвольный комментарий к точке загрузки",
+          "geozone": {
+            "id": 0,
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                44.697292211870554,
+                43.03449472631854
+              ]
+            },
+            "address": "Россия, Республика Северная Осетия — Алания, Владикавказ, Пушкинская улица, 58А",
+            "geocoderSourceType": "Yandex",
+            "city": "Владикавказ",
+            "state": "Республика Северная Осетия — Алания",
+            "county": "городской округ Владикавказ",
+            "street": "Пушкинская улица",
+            "houseNumber": "58А",
+            "federalDistrict": "Северо-Кавказский федеральный округ",
+            "radius": null,
+            "coordinates": null,
+            "type": "BidPoint"
+          },
+          "contactPerson": {
+            "phoneNumber": "+7 964 781-40-98",
+            "name": "Александр Пушкин"
+          },
+          "loadOptions": [
+            {
+              "id": 4612889
+            },
+            {
+              "id": 4612891
+            },
+            {
+              "id": 4675966
+            }
+          ],
+          "extendedProperties": []
+        },
+        {
+          "id": 0,
+          "order": 1,
+          "type": "UnloadPoint",
+          "planEnterDate": "2026-07-15T00:00",
+          "counterpartyId": 5225295,
+          "comment": "Произвольный комментарий к точке выгрузки",
+          "geozone": {
+            "id": 0,
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                52.224350311291346,
+                52.80040289067903
+              ]
+            },
+            "address": "Россия, Оренбургская область, Бузулук, улица Гая, 69",
+            "geocoderSourceType": "Yandex",
+            "city": "Бузулук",
+            "state": "Оренбургская область",
+            "county": "городской округ Бузулук",
+            "street": "улица Гая",
+            "houseNumber": "69",
+            "federalDistrict": "Приволжский федеральный округ",
+            "radius": null,
+            "coordinates": null,
+            "type": "BidPoint"
+          },
+          "contactPerson": {
+            "phoneNumber": "8 914 781 07 01",
+            "name": "Михаил Лермонтов"
+          },
+          "loadOptions": [
+            {
+              "id": 4612890
+            }
+          ],
+          "extendedProperties": []
+        }
+      ],
+      "cargos": [
+        {
+          "id": 0,
+          "name": "Кирпичи",
+          "typeId": 713,
+          "comment": "Произвольный комментарий к грузу",
+          "packType": "паллеты",
+          "volume": 18,
+          "length": 82,
+          "width": 13,
+          "height": 8,
+          "extendedProperties": []
+        }
+      ],
+      "extendedProperties": [
+        {
+          "propertyName": "CustomeFieldForDemo",
+          "value": "Пример заполнения кастомного поля"
+        }
+      ],
+      "typeOptions": [],
+      "documents": []
+    }
+  ]
+}
+```
+
 При ошибках валидации возвращается HTTP 4xx и текстовое описание ошибки.
 
 ---
