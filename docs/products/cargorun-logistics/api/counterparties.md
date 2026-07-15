@@ -51,23 +51,27 @@ POST /api/CargoOwnerDictionary/Apply
 ```json
 {
   "id": 0,
-  "name": "ООО \"Грузополучатель\"",
-  "inn": "1234567890",
-  "kpp": "123456789",
-  "ogrn": "1234567890123",
-  "address": "г. Москва, ул. Примерная, д. 1",
-  "mailingAddress": "г. Москва, ул. Примерная, д. 1",
-  "bankName": "АО \"Банк\"",
-  "bankId": "044525000",
-  "settlementAccount": "40702810000000000000",
-  "correspondentAccount": "30101810000000000000",
-  "isInsolvent": false,
-  "contactPerson": {
-    "firstName": "Иван",
-    "lastName": "Иванов",
-    "phoneNumber": "79999999999",
-    "email": "client@example.com"
-  }
+  "name": "ООО \"ЦИФРОВИЗАЦИЯ ТРАНСПОРТА\"",
+  "inn": "1650379003",
+  "kpp": "165001001",
+  "status": "Priority",
+  "analyzeStrictOffsetHours": 48,
+  "comment": "Произвольный комментарий по контрагенту",
+  "noteForDrivers": "Произвольное примечание по контрагенту, которое отображается водителям",
+  "management": {},
+  "platforms": [
+    {
+      "name": "Атракс",
+      "url": "https://www.atrucks.su/",
+      "representativeFullName": "Иван Цыплаков",
+      "representativeEmail": "example@example.com",
+      "representativePhoneNumber": "+74343434344",
+      "paymentTypeId": 41,
+      "paymentPeriodType": "InCalendarDays",
+      "paymentMethodType": "ByUnloading"
+    }
+  ],
+  "manual": true
 }
 ```
 
@@ -214,15 +218,19 @@ POST /api/CargoOwnerDictionary/ApplyContract
 ```json
 {
   "id": 0,
-  "counterpartyId": 57398,
-  "legalPersonId": 95143,
-  "name": "Основной договор",
-  "number": "Д-100",
-  "date": "2026-07-01",
-  "settlementCurrency": "RUB",
-  "paymentPeriod": 10,
-  "paymentTypeId": 1,
-  "isMain": true
+  "counterpartyId": 129762942,
+  "name": "999999 от 08.07.2026",
+  "isMain": true,
+  "legalPersonId": 127039078,
+  "number": "999999",
+  "date": "2026-07-08",
+  "invoiceTriggerType": "ByOriginal",
+  "settlementCurrency": "Руб",
+  "paymentPeriod": 30,
+  "paymentPeriodType": "InCalendarDays",
+  "paymentTypeId": 41,
+  "debtCeiling": 123000,
+  "currentDebt": 5000
 }
 ```
 
@@ -334,6 +342,36 @@ POST /api/CargoOwnerDictionary/ApplyCounterpartyPoint
 | `coordinates` | `array?` | Координаты полигона |
 | `radius` | `double?` | Радиус |
 | `type` | `MapObjectType` | Тип точки |
+
+#### Пример
+
+```json
+{
+  "id": 0,
+  "counterpartyId": 129647035,
+  "name": "Филиал IV",
+  "geozone": {
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        47.28185386175986,
+        56.06857967426879
+      ]
+    },
+    "address": "Россия, Чувашская Республика — Чувашия, Чебоксары, микрорайон Альгешево, улица Розы Люксембург, 2",
+    "geocoderSourceType": "Yandex",
+    "city": "Чебоксары",
+    "state": "Чувашская Республика — Чувашия",
+    "county": "городской округ Чебоксары",
+    "street": "улица Розы Люксембург",
+    "houseNumber": "2",
+    "federalDistrict": "Приволжский федеральный округ",
+    "radius": 500,
+    "coordinates": null,
+    "type": "CounterpartyPoint"
+  }
+}
+```
 
 ### 3.2. Получение списка точек
 

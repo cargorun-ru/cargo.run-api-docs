@@ -49,6 +49,44 @@ POST /api/driver/apply
 
 Минимальные обязательные поля и структура объекта описаны в `minimal-requirements.md`.
 
+#### Пример создания водителя
+
+```json
+{
+  "id": 0,
+  "firstName": "Николай",
+  "lastName": "Миклухо-Маклай",
+  "patronymic": "Николаевич",
+  "phoneNumber": "+73222323233",
+  "comment": "Ссылка на яндекс-диск",
+  "needsShiftChangeComment": "Произвольный текст",
+  "needsUrgentShiftChange": true,
+  "accessPermitIds": [
+    5,
+    16
+  ]
+}
+```
+
+#### Пример обновления паспортных данных и водительского удостоверения
+
+Паспортные данные и данные водительского удостоверения передаются в модели водителя. Для обновления существующего водителя укажите его `id`.
+
+```json
+{
+  "id": 128943713,
+  "passportSeries": "9292",
+  "passportNumber": "122345",
+  "passportGivenBy": "Электротехническим ОВД г. Кукуево",
+  "passportGivenWhen": "2026-07-09",
+  "departmentCode": "178-787",
+  "driverLicenseSeries": "2323",
+  "driverLicenseNumber": "123213",
+  "driverLicenseGivenWhen": "2026-06-30",
+  "driverLicenseValidUntil": "2026-06-30"
+}
+```
+
 ---
 
 ### 2.2. Удаление водителя
@@ -109,6 +147,45 @@ POST /api/car/apply
 
 Минимальные поля и структура приведены в `minimal-requirements.md`.
 
+#### Пример создания автомобиля
+
+```json
+{
+  "id": 0,
+  "number": "А232ОО/122",
+  "brandTypeId": 2716,
+  "typeId": 164,
+  "logistId": 1466813,
+  "trackerId": 109918,
+  "mechanic": {
+    "name": "Максим Горький",
+    "phoneNumber": "+7 (962) 568-00-89"
+  },
+  "columnDispatcher": {
+    "name": "Владимир Набоков",
+    "phoneNumber": "+7 (962) 6463232"
+  },
+  "comment": "Ссылка на яндекс-диск",
+  "needsMaintenanceComment": "Произвольный текст",
+  "needsUrgentMaintenance": true,
+  "isInRefuelingSyncList": true,
+  "accessPermitIds": [
+    1,
+    2
+  ],
+  "fuelTanks": [
+    {
+      "minimumVolume": 10,
+      "currentVolume": 0,
+      "totalVolume": 800,
+      "fuelConsumption": 33,
+      "minimumFuelTankVolume": 120,
+      "type": "Diesel"
+    }
+  ]
+}
+```
+
 ---
 
 ### 3.2. Удаление автомобиля
@@ -156,6 +233,49 @@ POST /api/trailer/apply
 
 - `id = 0` — создание прицепа;
 - `id > 0` — обновление.
+
+#### Пример создания прицепа
+
+```json
+{
+  "id": 0,
+  "number": "КК2323/232",
+  "brandTypeId": 2720,
+  "typeId": 15470,
+  "loadUnloadOptions": [
+    {
+      "id": 4612889
+    },
+    {
+      "id": 4612891
+    },
+    {
+      "id": 4612890
+    }
+  ],
+  "mechanic": {
+    "name": "Максим Горький",
+    "phoneNumber": "+7 (927) 200-66-00"
+  },
+  "comment": "Ссылка на яндекс-диск",
+  "trackerId": 4137,
+  "isInRefuelingSyncList": true,
+  "accessPermitIds": [
+    4,
+    7
+  ],
+  "fuelTanks": [
+    {
+      "minimumVolume": 0,
+      "currentVolume": 0,
+      "totalVolume": 120,
+      "fuelConsumption": 33,
+      "minimumFuelTankVolume": 120,
+      "type": "Diesel"
+    }
+  ]
+}
+```
 
 ---
 
