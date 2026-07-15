@@ -3,6 +3,12 @@
   --md-primary-fg-color--light: #1f1f1f;
   --md-primary-fg-color--dark: #000000;
   --md-accent-fg-color: #ffd200;
+  --cr-link-color: #8a6d00;
+  --cr-link-hover-color: #5f4a00;
+  --cr-nav-section-color: #5f6368;
+  --cr-nav-hover-bg: #fff6cf;
+  --cr-nav-hover-color: #5f4a00;
+  --cr-nav-active-color: #8a6d00;
 }
 
 .md-header,
@@ -42,10 +48,64 @@
   font-weight: 700;
 }
 
+.md-typeset a {
+  color: var(--cr-link-color);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.16em;
+}
+
+.md-typeset a:hover {
+  color: var(--cr-link-hover-color);
+}
+
+.md-typeset a code {
+  color: inherit;
+}
+
+.md-nav__item--section > .md-nav__link {
+  color: var(--cr-nav-section-color);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.md-nav__link {
+  border-radius: 4px;
+}
+
+.md-nav__link:is(:hover, :focus) {
+  background-color: var(--cr-nav-hover-bg);
+  color: var(--cr-nav-hover-color);
+}
+
+.md-nav__link--active,
+.md-nav__link--active:is(:hover, :focus) {
+  color: var(--cr-nav-active-color);
+  font-weight: 700;
+}
+
 .md-typeset table:not([class]) {
   font-size: 0.72rem;
 }
 
 .md-typeset code {
   border-radius: 4px;
+}
+
+[data-md-color-scheme="slate"] {
+  --cr-link-color: #ffd84d;
+  --cr-link-hover-color: #fff1a6;
+  --cr-nav-section-color: #ffd84d;
+  --cr-nav-hover-bg: rgba(255, 210, 0, 0.14);
+  --cr-nav-hover-color: #fff1a6;
+  --cr-nav-active-color: #ffd84d;
+}
+
+[data-md-color-scheme="slate"] .md-nav__title {
+  color: #f6f6f6;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--section > .md-nav__link {
+  color: var(--cr-nav-section-color);
 }
