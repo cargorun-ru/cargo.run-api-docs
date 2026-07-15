@@ -47,6 +47,110 @@ POST /api/distributionbids/apply
 
 - [Минимальные требования к запросам](../minimal-requirements.md)
 
+### Основные поля `DistributionBidEditModel`
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | `0` для создания нового заказа, ID существующего заказа для обновления |
+| `counterpartyId` | `long?` | Нет | ID контрагента |
+| `legalPersonId` | `long?` | Нет | ID юридического лица |
+| `sourceId` | `long?` | Нет | ID источника заказа |
+| `trailerTypeId` | `long?` | Нет | ID типа прицепа |
+| `contactPerson` | `object?` | Нет | Контактное лицо |
+| `temperatureRegime` | `object?` | Нет | Температурный режим |
+| `carId` | `long?` | Нет | ID автомобиля |
+| `driverId` | `long?` | Нет | ID водителя |
+| `trailerId` | `long?` | Нет | ID прицепа |
+| `externalStatus` | `ExternalDistributionBidStatus` | Да | Внешний статус заказа |
+| `cargos` | `DistributionBidCargoModel[]?` | Нет | Грузы |
+| `bidPoints` | `DistributionBidPointEditModel[]?` | Нет | Точки заказа |
+| `key` | `string?` | Нет | Ключ или внешний код заказа |
+| `comment` | `string?` | Нет | Комментарий |
+| `paymentTypeId` | `long?` | Нет | Тип оплаты |
+| `ndsTypeId` | `long?` | Нет | Тип НДС |
+| `price` | `double?` | Нет | Стоимость |
+| `isVatTop` | `boolean?` | Нет | НДС начисляется сверху |
+| `externalId` | `string?` | Нет | Внешний ID |
+
+### Поля `bidPoints[]`
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | `0` для новой точки, ID существующей точки для обновления |
+| `order` | `int` | Да | Порядковый номер точки в маршруте |
+| `type` | `BidPointType` | Да | Тип точки заказа |
+| `customPointTypeId` | `long?` | Нет | Тип пользовательской точки, если `type = CustomPoint` |
+| `planEnterDate` | `date-time?` | Нет | Плановое время прибытия |
+| `secondaryPlanEnterDate` | `date-time?` | Нет | Дополнительное плановое время |
+| `geozone` | `MapObjectEditModel?` | Нет | Геозона/адрес точки |
+| `counterpartyId` | `long?` | Нет | Контрагент точки |
+| `contactPerson` | `ContactPersonModel?` | Нет | Контактное лицо точки |
+| `comment` | `string?` | Нет | Комментарий к точке |
+| `loadOptions` | `LoadOptionModel[]?` | Нет | Опции погрузки/выгрузки |
+
+### Значения `BidPointType`
+
+| Значение | Код | Описание |
+|---|---:|---|
+| `StartPoint` | `0` | Стартовая точка маршрута |
+| `LoadPoint` | `1` | Точка погрузки |
+| `UnloadPoint` | `2` | Точка выгрузки |
+| `CustomPoint` | `3` | Пользовательская точка маршрута. Для нее можно передать `customPointTypeId` |
+
+### Поля `bidPoints[].geozone`
+
+`geozone` описывает адрес и географию точки заказа.
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | ID геообъекта. Для новой точки обычно передается `0` |
+| `location` | `PointEditModel` | Да | Координаты точки |
+| `city` | `string?` | Нет | Город |
+| `address` | `string?` | Нет | Полный адрес |
+| `village` | `string?` | Нет | Населенный пункт |
+| `state` | `string?` | Нет | Регион |
+| `county` | `string?` | Нет | Район |
+| `street` | `string?` | Нет | Улица |
+| `houseNumber` | `string?` | Нет | Номер дома |
+| `federalDistrict` | `string?` | Нет | Федеральный округ |
+| `radius` | `double?` | Нет | Радиус геозоны |
+| `type` | `MapObjectType` | Да | Тип геообъекта |
+
+### Поля `bidPoints[].geozone.location`
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `coordinates` | `double[]?` | Нет | Координаты точки. Обычно передаются в формате `[долгота, широта]` |
+
+### Значения `MapObjectType`
+
+| Значение | Код | Описание |
+|---|---:|---|
+| `None` | `0` | Тип не задан |
+| `BidPoint` | `1` | Точка заявки или заказа |
+| `RouteSupportPoint` | `2` | Опорная точка маршрута |
+| `GasStation` | `3` | АЗС |
+| `StartBidPoint` | `4` | Стартовая точка заявки или заказа |
+| `PostamatPoint` | `5` | Постамат |
+| `ItemChangePoint` | `6` | Точка перецепки или пересменки |
+| `ServicePoint` | `7` | Сервисная точка |
+| `CounterpartyPoint` | `8` | Точка контрагента |
+| `TripCouplingPoint` | `9` | Точка сцепки рейса |
+
+### Поля `bidPoints[].contactPerson`
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | ID контактного лица |
+| `name` | `string?` | Нет | Имя контактного лица |
+| `phoneNumber` | `string?` | Нет | Телефон контактного лица |
+
+### Поля `bidPoints[].loadOptions[]`
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| `id` | `long` | Да | ID опции погрузки или выгрузки |
+
 При ошибках валидации возвращается HTTP 4xx и текстовое описание ошибки.
 
 ---
@@ -137,6 +241,15 @@ GET /api/distributionbids/getlistforexternal
 | `hasUploadedFile` | `boolean` | Загружен файл заказа |
 | `isPreBid` | `boolean` | Предзаявка |
 | `accessPermitIds` | `long[]?` | Допуски и разрешения |
+
+### Поля `extendedProperties[]`
+
+`extendedProperties` содержит пользовательские дополнительные поля заказа.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `propertyName` | `string` | Имя пользовательского поля |
+| `value` | `string?` | Значение, заданное пользователем |
 
 ### Поля `typeOptions[]`
 
