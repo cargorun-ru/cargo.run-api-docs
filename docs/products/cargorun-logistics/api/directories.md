@@ -345,17 +345,29 @@ GET /api/legalpersons/getlist
 Для получения различных типовых справочников (типы машин, типы прицепов, типы груза, бренды и пр.) используется единый метод:
 
 ```http
-GET /api/catalogs/getsimple
+GET /api/catalogs/getSimple
 ```
 
-Через query-параметры указывается, какой именно каталог требуется получить. Набор доступных каталогов зависит от подключения клиента; обычно используется идентификатор или системное имя каталога, согласованное при интеграции.
+Список общих справочников со значениями можно получить так:
+
+```http
+GET /api/catalogs/getSimple?$filter=externalId eq null&$orderby=id desc
+```
+
+В URL пробелы кодируются как `%20`:
+
+```http
+https://app.cargorun.ru/api/catalogs/getSimple?$filter=externalId%20eq%20null&$orderby=id%20desc
+```
+
+`externalId eq null` возвращает общие справочники CARGO.RUN, а `$orderby=id desc` сортирует их по ID в обратном порядке. Набор доступных каталогов зависит от подключения клиента.
 
 Минимальный набор параметров:
 
 | Параметр | Описание |
 |---|---|
-| `type` / `catalogType` | Тип или системное имя каталога, если оно используется в подключении |
 | `$filter` | Фильтр по элементам каталога |
+| `$orderby` | Сортировка |
 | `$top` | Ограничение количества записей |
 | `$skip` | Смещение |
 
@@ -368,6 +380,105 @@ GET /api/catalogs/getsimple
 - бренды машин;
 - бренды прицепов;
 - типы грузов.
+
+### Пример ответа
+
+Ниже показан сокращенный пример ответа: в реальном ответе может быть больше справочников и больше элементов внутри каждого справочника.
+
+```json
+[
+  {
+    "id": 30,
+    "displayName": "НДС",
+    "propertyName": "NDSType",
+    "type": "NDSType",
+    "externalId": null,
+    "items": [
+      {
+        "id": 38,
+        "displayName": "Без НДС",
+        "propertyName": "Without",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 39,
+        "displayName": "10%",
+        "propertyName": "10%",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 40,
+        "displayName": "20%",
+        "propertyName": "20%",
+        "isDeleted": false,
+        "isHidden": false
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "displayName": "Типы прицепов/полуприцепов",
+    "propertyName": "TrailerType",
+    "type": "TrailerType",
+    "externalId": null,
+    "items": [
+      {
+        "id": 44,
+        "displayName": "Бензовоз",
+        "propertyName": "Gasoline",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 45,
+        "displayName": "Автоцистерна",
+        "propertyName": "Tank",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 46,
+        "displayName": "Цементовоз",
+        "propertyName": "Cement",
+        "isDeleted": false,
+        "isHidden": false
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "displayName": "Тип оплаты",
+    "propertyName": "PaymentType",
+    "type": "PaymentType",
+    "externalId": null,
+    "items": [
+      {
+        "id": 41,
+        "displayName": "Безналичный",
+        "propertyName": "NonCash",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 42,
+        "displayName": "Наличный",
+        "propertyName": "Cash",
+        "isDeleted": false,
+        "isHidden": false
+      },
+      {
+        "id": 88752941,
+        "displayName": "Платежная карта",
+        "propertyName": "Платежная карта",
+        "isDeleted": false,
+        "isHidden": false
+      }
+    ]
+  }
+]
+```
 
 Использование этих каталогов описано в:
 
