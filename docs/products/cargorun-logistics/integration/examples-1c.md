@@ -76,6 +76,8 @@ GET /api/bids/GetListForExternal
   ?$filter=Status eq 'Done'
            and updatedAt gt 2019-11-20T06:00:00Z
   &$orderby=updatedAt
+  &$top=50
+  &$skip=0
 ```
 
 После получения данных:
