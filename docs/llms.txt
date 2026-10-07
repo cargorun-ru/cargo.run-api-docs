@@ -1,0 +1,27 @@
+# CARGO.RUN API Documentation
+
+> Документация API продуктов CARGO.RUN для разработчиков и ИИ-агентов.
+
+## Интеграция с партнёрскими сервисами
+
+- [Обзор](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/): назначение, сценарии и способы взаимодействия.
+- [Быстрый старт](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/getting-started/): минимальный рабочий сценарий интеграции.
+- [Подключение и авторизация](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/auth/): M2M-токен и настройки интеграционного клиента.
+- [Модель доступа](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/access/): доступ к организациям и заявкам.
+- [Создание и обновление заявки](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/scenarios/create-update-bid/): синхронное и асинхронное создание.
+- [Получение связанных заявок](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/scenarios/receive-bids/): получение заявок, назначенных партнёрскому сервису.
+- [Отслеживание исполнения](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/scenarios/track-execution/): статусы, ETA, события, маршруты, сообщения и файлы.
+- [Восстановление синхронизации](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/scenarios/recovery/): курсоры и контрольная сверка.
+- [Синхронное API](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/sync-api/): правила синхронных вызовов.
+- [Асинхронная очередь](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/async-queue/): команды, задачи и результаты.
+- [Webhook и подписки](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/webhooks/): события, подпись и доставка.
+- [Надёжность интеграции](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reliability/): идемпотентность, повторы и восстановление.
+- [Методы API](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/endpoints/): справочник методов.
+- [Методы API, модели и значения](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/endpoints/): методы, параметры, модели запросов и ответов, примеры и возможные значения полей.
+- [Ошибки и ограничения](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/errors-and-limits/): ошибки, лимиты и неподдерживаемые операции.
+- [Полные примеры](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/examples/): сквозные сценарии.
+- [Чек-лист запуска](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/launch-checklist/): проверка готовности интеграции.
+
+## Машиночитаемые материалы
+
+- [Полная документация одним файлом](https://cargorun-ru.github.io/cargo.run-api-docs/llms-full.txt): весь раздел в Markdown для LLM и ИИ-агентов.
