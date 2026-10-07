@@ -120,8 +120,23 @@ nav:
           - Карта: products/cargorun-loads/api/map.md
   - CARGO.RUN Маршрутизация:
       - YATRS API: products/cargorun-yatrs/yatrs.md
-  - CARGO.RUN Iris:
-      - Обзор продукта: products/cargorun-iris/index.md
-      - Авторизация и организации: products/cargorun-iris/Iris_autorization.md
-      - API Iris: products/cargorun-iris/Iris_API.md
-      - Модели и типы: products/cargorun-iris/Iris_types_and_models.md
+  - Интеграция с партнёрскими сервисами:
+      - Обзор: products/partner-integrations/index.md
+      - Быстрый старт: products/partner-integrations/getting-started.md
+      - Подключение и авторизация: products/partner-integrations/auth.md
+      - Модель доступа: products/partner-integrations/access.md
+      - Сценарии:
+          - Создание и обновление заявки: products/partner-integrations/scenarios/create-update-bid.md
+          - Получение связанных заявок: products/partner-integrations/scenarios/receive-bids.md
+          - Отслеживание исполнения: products/partner-integrations/scenarios/track-execution.md
+          - Восстановление синхронизации: products/partner-integrations/scenarios/recovery.md
+      - Способы взаимодействия:
+          - Синхронное API: products/partner-integrations/sync-api.md
+          - Асинхронная очередь: products/partner-integrations/async-queue.md
+          - Webhook и подписки: products/partner-integrations/webhooks.md
+          - Надёжность интеграции: products/partner-integrations/reliability.md
+      - Справочник:
+          - Методы API, модели и значения: products/partner-integrations/reference/endpoints.md
+          - Ошибки и ограничения: products/partner-integrations/reference/errors-and-limits.md
+      - Полные примеры: products/partner-integrations/examples.md
+      - Чек-лист запуска: products/partner-integrations/launch-checklist.md
