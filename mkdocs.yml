@@ -140,3 +140,4 @@ nav:
           - Ошибки и ограничения: products/partner-integrations/reference/errors-and-limits.md
       - Полные примеры: products/partner-integrations/examples.md
       - Чек-лист запуска: products/partner-integrations/launch-checklist.md
+      - Для LLM и ИИ-агентов: products/partner-integrations/for-ai.md

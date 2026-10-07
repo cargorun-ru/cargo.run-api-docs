@@ -21,7 +21,8 @@ const files = [
   "reference/endpoints.md",
   "reference/errors-and-limits.md",
   "examples.md",
-  "launch-checklist.md"
+  "launch-checklist.md",
+  "for-ai.md"
 ];
 
 const output = [
