@@ -52,6 +52,7 @@ const descriptionOverrides = new Map(Object.entries({
   "ClientCredentialsTokenModel.clientId": "Идентификатор интеграционного клиента, выданный CARGO.RUN.",
   "ClientCredentialsTokenModel.clientSecret": "Секрет интеграционного клиента, выданный CARGO.RUN.",
   "IntegrationBidEditModel.bidPoints": "Точки маршрута: минимум одна точка погрузки и одна точка выгрузки. CARGO.RUN сортирует точки по `planEnterDate`.",
+  "IntegrationBidEditModel.id": "Внутренний идентификатор заявки CARGO.RUN. Не указывается при создании. При обновлении используется, если поиск по `externalId` не нашёл заявку; найденная по `externalId` заявка имеет приоритет.",
   "IntegrationBidEditModel.cargos": "Грузы. Передайте как минимум один груз; у каждого груза обязательно поле `name`.",
   "IntegrationBidEditModel.trailer": "Прицеп. Необязателен; если объект передан, поле `number` обязательно.",
   "ApplyBidFromIntegrationContext.inn": "ИНН организации перевозчика: 10 цифр для организации или 12 цифр для ИП. Обязателен при синхронном и асинхронном создании или обновлении заявки.",
@@ -154,6 +155,7 @@ const normalizeTerms = (value) => String(value ?? "—")
   .replaceAll("Bid statuses", "Статус заявки")
   .replaceAll("Internal entity type", "Тип внутренней сущности")
   .replaceAll("Task object result status", "Статус результата обработки объекта")
+  .replaceAll("Queued api task status", "Статус очереди заданий")
   .replaceAll("Activity sign", "Признак активности")
   .replaceAll("Activity status", "Сведения о неактивности")
   .replaceAll("Mechanic", "Механик")
@@ -292,6 +294,10 @@ const output = [
   "| `status` | `QueuedApiTaskEnqueueStatus` | Да | Нет | Результат постановки |",
   "| `readyInMsec` | `int64` | Да | Нет | Ориентировочная задержка до готовности |",
   "| `message` | `string` | Нет | Да | Причина отказа в постановке |",
+  "",
+  "### `QueuedApiTaskEnqueueStatus`",
+  "",
+  "Возможные результаты постановки команды перечислены в разделе «Возможные значения полей».",
   "",
   "### `QueuedApiTaskCallbackPayload`",
   "",
