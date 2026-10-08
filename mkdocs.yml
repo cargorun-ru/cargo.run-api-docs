@@ -10,6 +10,8 @@ site_dir: site
 exclude_docs: |
   README.md
   products/cargorun-logistics/api/_overview.md
+  products/partner-integrations/reference/models.md
+  products/partner-integrations/reference/enums.md
 
 theme:
   name: material
