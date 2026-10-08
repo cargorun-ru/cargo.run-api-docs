@@ -11,6 +11,90 @@ if (!source || !target) {
 const document = JSON.parse(fs.readFileSync(source, "utf8"));
 const schemas = document.components?.schemas ?? {};
 
+// OpenAPI describes the reusable CLR models, while the partner contract also
+// contains operation-specific validation rules and string enum serialization.
+const requiredOverrides = new Map([
+  ["ClientCredentialsTokenModel", new Set(["grantType", "clientId", "clientSecret"])],
+  ["ApplyBidFromIntegrationContext", new Set(["bid", "inn"])],
+  ["IntegrationBidEditModel", new Set(["bidPoints", "cargos", "car", "driver"])],
+  ["IntegrationBidPointModel", new Set(["planEnterDate", "geozone"])],
+  ["IntegrationBidPointAddressModel", new Set(["location", "address"])],
+  ["PointEditModel", new Set(["coordinates"])],
+  ["Point", new Set(["coordinates"])],
+  ["CargoModel", new Set(["name"])],
+  ["IntegrationBidDetailsModel.bid.cargos", new Set(["name"])]
+]);
+
+const optionalOverrides = new Map([
+  ["IntegrationBidEditModel", new Set(["id"])]
+]);
+
+const typeOverrides = new Map(Object.entries({
+  "IntegrationBidDetailsModel.bid.status": "BidStatus",
+  "IntegrationBidDetailsModel.bid.bidPointLoadUnloadStatus": "BidPointLoadUnloadStatus",
+  "IntegrationBidDetailsModel.bid.paymentPeriodType": "PaymentPeriodType",
+  "IntegrationBidDetailsModel.bid.invoiceTriggerType": "InvoiceTriggerType",
+  "IntegrationBidDetailsModel.bid.sourceType": "SourceType",
+  "IntegrationBidDetailsModel.events.type": "IntegrationBidEventType",
+  "IntegrationBidDetailsModel.bid.bidPoints.type": "BidPointType",
+  "IntegrationBidDetailsModel.bid.cargos.unitOfMeasure": "UnitOfMeasure",
+  "IntegrationBidDetailsModel.bid.payment.documentsTrackingStatus": "DocumentsTrackingStatus",
+  "IntegrationBidDetailsModel.bid.payment.paymentStatus": "BidPaymentStatus",
+  "IntegrationBidDetailsModel.plannedRoute.routeOptions.country": "RouterCountryType",
+  "IntegrationBidDetailsModel.plannedRoute.routeOptions.routerProfile": "RouterProfile",
+  "IntegrationBidDetailsModel.bid.bidPoints.geozone.type": "MapObjectType",
+  "IntegrationBidDetailsModel.plannedRoute.routeOptions.avoidTollRoadFlags": "AvoidTollRoadFlags",
+  "IntegrationBidDetailsModel.plannedRoute.routeOptions.avoidSpecialRoadFlags": "AvoidSpecialRoadFlags"
+}));
+
+const descriptionOverrides = new Map(Object.entries({
+  "ClientCredentialsTokenModel.grantType": "Тип выдачи токена. Передавайте фиксированное значение `client_credentials`.",
+  "ClientCredentialsTokenModel.clientId": "Идентификатор интеграционного клиента, выданный CARGO.RUN.",
+  "ClientCredentialsTokenModel.clientSecret": "Секрет интеграционного клиента, выданный CARGO.RUN.",
+  "IntegrationBidEditModel.bidPoints": "Точки маршрута: минимум одна точка погрузки и одна точка выгрузки. CARGO.RUN сортирует точки по `planEnterDate`.",
+  "IntegrationBidEditModel.cargos": "Грузы. Передайте как минимум один груз; у каждого груза обязательно поле `name`.",
+  "IntegrationBidEditModel.trailer": "Прицеп. Необязателен; если объект передан, поле `number` обязательно.",
+  "ApplyBidFromIntegrationContext.inn": "ИНН организации перевозчика: 10 цифр для организации или 12 цифр для ИП. Обязателен при синхронном и асинхронном создании или обновлении заявки.",
+  "IntegrationBidListModel.externalId": "В `Bids/GetList` — идентификатор, переданный партнёром при создании заявки; в `Bids/GetCurrentList` — идентификатор заказа, указанный перевозчиком для платформы партнёра.",
+  "IntegrationBidListModel.updatedAt": "Дата последнего изменения заявки. Для курсорной выборки используйте `$filter=updatedAt gt {курсор}&$orderby=updatedAt,id` и небольшое перекрытие интервалов.",
+  "BidForExternalSyncModel.sourceType": "Источник заявки в CARGO.RUN. Поле возвращается сервером; партнёр его не задаёт.",
+  "IntegrationBidDetailsModel.bid.sourceType": "Источник заявки в CARGO.RUN. Поле возвращается сервером; партнёр его не задаёт.",
+  "IntegrationBidDetailsModel.driverMessages": "Сокращённые сообщения водителя. Поля `type` и `flags` доступны только в синхронной модели `ChatMessageGetModel`.",
+  "ChatMessageGetModel.fileId": "Устаревшее поле. В новой интеграции используйте `files[]`.",
+  "ChatMessageGetModel.fileIds": "Устаревшее поле. В новой интеграции используйте `files[]`.",
+  "ChatMessageGetModel.file": "Устаревшее поле. В новой интеграции используйте `files[]`.",
+  "ChatMessageGetModel.files": "Авторитетный список файлов сообщения для новой интеграции.",
+  "QueuedApiTaskObjectAddModel.body": "Тело объекта. Обязательно для `action=Write`; для `Read` и `ReadQuery` не передаётся.",
+  "QueuedApiTaskObjectAddModel.status": "Диагностический статус. В документированных партнёрских командах не передаётся.",
+  "QueuedApiTaskObjectAddModel.sourceType": "Служебное поле. В документированных партнёрских командах не передаётся.",
+  "QueuedApiTaskObjectResultModel.id": "Внутренний идентификатор обработанного объекта CARGO.RUN.",
+  "PointEditModel.coordinates": "Координаты точки в формате `[долгота, широта]`, WGS 84.",
+  "Point.coordinates": "Координаты точки в формате `[долгота, широта]`, WGS 84.",
+  "Point.type": "Тип геометрии (`Point`). Поле возвращается сервером и не передаётся в `PointEditModel`.",
+  "IntegrationBidDetailsModel.bid.bidPoints.geozone.location.type": "Тип геометрии (`Point`). Поле возвращается сервером.",
+  "TraveledRouteFixedAtPartModel.coordinate": "Координата фактического маршрута в формате `[долгота, широта]`, WGS 84.",
+  "PropertyNameValueJsonObject.value": "Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении.",
+  "IntegrationBidDetailsModel.bid.extendedProperties.value": "Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении.",
+  "IntegrationBidDetailsModel.bid.bidPoints.extendedProperties.value": "Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении.",
+  "IntegrationBidDetailsModel.bid.cargos.extendedProperties.value": "Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении.",
+  "QueuedApiTaskObjectAddModel.version": "Версия объекта. Если указано `id`, а `version` не передан, проверка версии не выполняется.",
+  "QueuedApiTaskObjectAddModel.query": "OData-запрос для `ReadQuery`. При его использовании поля `id`, `version` и `key` не передаются.",
+  "QueuedApiTaskObjectResultModel.version": "Версия объекта. Если указано `id`, а `version` отсутствует, проверка версии не выполнялась.",
+  "QueuedApiTaskObjectResultModel.query": "OData-запрос задачи `ReadQuery`; поля `id`, `version` и `key` для такой задачи отсутствуют."
+}));
+
+const constraintOverrides = new Map(Object.entries({
+  "ClientCredentialsTokenModel.grantType": "значение: `client_credentials`",
+  "IntegrationBidEditModel.bidPoints": "min items: `2`",
+  "IntegrationBidEditModel.externalId": "max length: `72`",
+  "IntegrationBidEditModel.comment": "max length: `4096`",
+  "IntegrationBidEditModel.clientBidNumber": "max length: `256`",
+  "IntegrationBidEditModel.price": "min: `0`; max: `9999999999`",
+  "IntegrationBidPointModel.externalId": "max length: `72`",
+  "IntegrationBidPointModel.comment": "max length: `8092`",
+  "TraveledRouteFixedAtPartModel.coordinate": "min items: `2`; max items: `2`"
+}));
+
 const roots = [
   "ClientCredentialsTokenModel",
   "IntegrationOrganizationCheckModel",
@@ -30,10 +114,7 @@ const roots = [
   "EnqueueApiTasksResponseModel",
   "EnqueuedApiTaskResponseModel",
   "QueuedApiTaskGetResultsModel",
-  "QueuedApiTaskObjectResultModel",
-  "OrganizationIntegrationLeadListModel",
-  "MarkOrganizationIntegrationLeadPaidContext",
-  "ConfirmDriverAuthorizationContext"
+  "QueuedApiTaskObjectResultModel"
 ].filter((name) => schemas[name]);
 
 const referenced = new Set(roots);
@@ -59,7 +140,26 @@ const normalizeTerms = (value) => String(value ?? "—")
   .replaceAll("внешняя площадка", "партнёрский сервис")
   .replaceAll("площадки", "партнёрского сервиса")
   .replaceAll("площадке", "партнёрскому сервису")
-  .replaceAll("площадка", "партнёрский сервис");
+  .replaceAll("площадка", "партнёрский сервис")
+  .replaceAll("внешним партнёрский сервисм", "партнёрским сервисам")
+  .replaceAll("Текущая партнёрский сервис", "Текущий партнёрский сервис")
+  .replaceAll("на партнёрскому сервису", "в партнёрском сервисе")
+  .replaceAll("Расчетная дата вьезда", "Расчётная дата въезда")
+  .replaceAll("Обьем", "Объём")
+  .replaceAll("Оставшиеся количество объектов", "Оставшееся количество объектов")
+  .replaceAll("Модель задания с указаным типом", "Модель задания с указанным типом")
+  .replaceAll("Average value (optional)", "Среднее значение")
+  .replaceAll("Fixed at date", "Дата и время фиксации")
+  .replaceAll("Bid point model for a view", "Точка маршрута")
+  .replaceAll("Bid statuses", "Статус заявки")
+  .replaceAll("Internal entity type", "Тип внутренней сущности")
+  .replaceAll("Task object result status", "Статус результата обработки объекта")
+  .replaceAll("Activity sign", "Признак активности")
+  .replaceAll("Activity status", "Сведения о неактивности")
+  .replaceAll("Mechanic", "Механик")
+  .replaceAll("Is deleted?", "Признак удаления")
+  .replaceAll("IsVatTop", "isVatTop")
+  .replaceAll("Values", "Значения");
 
 const escapeCell = (value) => normalizeTerms(value)
   .replaceAll("|", "\\|")
@@ -72,6 +172,7 @@ const nullable = (schema) => {
 };
 
 const baseType = (schema, inlineName) => {
+  if (typeOverrides.has(inlineName)) return `\`${typeOverrides.get(inlineName)}\``;
   if (!schema) return "не указан";
   const directRef = refName(schema);
   if (directRef) return `\`${directRef}\``;
@@ -83,7 +184,10 @@ const baseType = (schema, inlineName) => {
     const itemRef = refName(schema.items);
     if (itemRef) return `\`${itemRef}[]\``;
     if (schema.items?.properties) return `\`${inlineName}[]\``;
-    return `${baseType(schema.items, `${inlineName}Item`)}[]`;
+    const itemType = baseType(schema.items, `${inlineName}Item`);
+    return itemType.startsWith("`") && itemType.endsWith("`")
+      ? `\`${itemType.slice(1, -1)}[]\``
+      : `${itemType}[]`;
   }
   if (type === "object" || schema.properties) return `\`${inlineName}\``;
   if (schema.format) return `\`${schema.format}\``;
@@ -116,6 +220,8 @@ const renderSchema = (name, schema, level = 2) => {
 
   const properties = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
+  for (const field of requiredOverrides.get(name) ?? []) required.add(field);
+  for (const field of optionalOverrides.get(name) ?? []) required.delete(field);
   if (Object.keys(properties).length === 0) {
     lines.push("Схема не содержит именованных полей.", "");
     return lines;
@@ -125,7 +231,12 @@ const renderSchema = (name, schema, level = 2) => {
   for (const [propertyName, propertySchema] of Object.entries(properties)) {
     const inlineName = `${name}.${propertyName}`;
     captureInline(propertySchema, inlineName);
-    lines.push(`| \`${propertyName}\` | ${escapeCell(baseType(propertySchema, inlineName))} | ${required.has(propertyName) ? "Да" : "Нет"} | ${nullable(propertySchema) ? "Да" : "Нет"} | ${escapeCell(constraints(propertySchema))} | ${escapeCell(propertySchema.description)} |`);
+    const description = descriptionOverrides.get(inlineName) ?? propertySchema.description;
+    const allowsNull = required.has(propertyName) && (requiredOverrides.get(name)?.has(propertyName) ?? false)
+      ? false
+      : nullable(propertySchema);
+    const propertyConstraints = constraintOverrides.get(inlineName) ?? constraints(propertySchema);
+    lines.push(`| \`${propertyName}\` | ${escapeCell(baseType(propertySchema, inlineName))} | ${required.has(propertyName) ? "Да" : "Нет"} | ${allowsNull ? "Да" : "Нет"} | ${escapeCell(propertyConstraints)} | ${escapeCell(description)} |`);
   }
   lines.push("");
   return lines;
@@ -134,7 +245,7 @@ const renderSchema = (name, schema, level = 2) => {
 const output = [
   "# Модели запросов и ответов",
   "",
-  "Колонка «Обязательно» учитывает правила партнёрского API. Для создания заявки необходимо передать `bid`, `inn`, автомобиль, водителя, минимум две точки и `planEnterDate` каждой точки. Поле `IntegrationBidEditModel.id` при создании можно не передавать.",
+  "Колонка «Обязательно» отражает контракт партнёрского API с учётом бизнес-валидации конкретных операций. Все enum в JSON передаются строковыми значениями из раздела «Возможные значения полей».",
   "",
   "## Результаты операций",
   "",
@@ -143,11 +254,6 @@ const output = [
   "| Поле | Тип | Обязательно | `null` | Описание |",
   "|---|---|---:|---:|---|",
   "| `accessToken` | `AccessToken` | Да | Нет | Токен доступа и срок действия |",
-  "| `refreshToken` | `string` | Нет | Да | Для M2M не заполняется |",
-  "| `twoFactorToken` | `object` | Нет | Да | Для M2M не заполняется |",
-  "| `currentUser` | `object` | Нет | Да | Для M2M не заполняется |",
-  "| `requiresTwoFactor` | `boolean` | Да | Нет | Для M2M всегда `false` |",
-  "| `twoFactorProvider` | `string` | Нет | Да | Для M2M не заполняется |",
   "",
   "### `AccessToken`",
   "",
@@ -224,4 +330,4 @@ while (true) {
 }
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
-fs.writeFileSync(target, `${output.join("\n")}\n`, "utf8");
+fs.writeFileSync(target, `${output.join("\n").trimEnd()}\n`, "utf8");

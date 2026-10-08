@@ -14,8 +14,6 @@ GET  <baseUrl>/api/integrations/Tasks/Queue?id={taskId}
 POST <baseUrl>/api/integrations/Tasks/Ping
 ```
 
-`X-Organization-Id` не требуется.
-
 ## Поддерживаемые комбинации
 
 | `action` | `type` | `modelType` | Назначение | Результат `body` |
@@ -77,6 +75,8 @@ Authorization: Bearer <accessToken.token>
 
 ## Два уровня ошибок
 
+Ниже показан сокращённый фрагмент ответа, содержащий только поля, важные для обработки ошибки объекта:
+
 ```json
 {
   "status": "Completed",
@@ -85,7 +85,7 @@ Authorization: Bearer <accessToken.token>
       "type": "Bid",
       "id": 12345,
       "status": "Error",
-      "message": "Bid is not found or is not available for the client.",
+      "message": "Заявка не найдена или недоступна интеграционному клиенту.",
       "body": null
     }
   ]

@@ -16,12 +16,14 @@
 - [Асинхронная очередь](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/async-queue/): команды, задачи и результаты.
 - [Webhook и подписки](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/webhooks/): события, подпись и доставка.
 - [Надёжность интеграции](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reliability/): идемпотентность, повторы и восстановление.
-- [Методы API](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/endpoints/): справочник методов.
-- [Методы API, модели и значения](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/endpoints/): методы, параметры, модели запросов и ответов, примеры и возможные значения полей.
+- [Канонический справочник API](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/endpoints/): методы, параметры, модели запросов и ответов, примеры и возможные значения полей.
 - [Ошибки и ограничения](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/reference/errors-and-limits/): ошибки, лимиты и неподдерживаемые операции.
 - [Полные примеры](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/examples/): сквозные сценарии.
 - [Чек-лист запуска](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/launch-checklist/): проверка готовности интеграции.
+- [Для LLM и ИИ-агентов](https://cargorun-ru.github.io/cargo.run-api-docs/products/partner-integrations/for-ai/): рекомендации по выбору и использованию машиночитаемых материалов.
 
 ## Машиночитаемые материалы
 
 - [Полная документация одним файлом](https://cargorun-ru.github.io/cargo.run-api-docs/llms-full.txt): весь раздел в Markdown для LLM и ИИ-агентов.
+
+Страница `reference/endpoints/` является каноническим справочником и включает модели и возможные значения. Файлы `reference/models.md` и `reference/enums.md` используются как фрагменты сборки и не являются отдельными публичными разделами.

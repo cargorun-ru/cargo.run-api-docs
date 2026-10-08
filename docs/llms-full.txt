@@ -191,7 +191,7 @@ Content-Type: application/json
 }
 ```
 
-`expiresIn` задаётся в секундах. Переиспользованные поля `refreshToken`, `currentUser` и `requiresTwoFactor` при M2M-авторизации не заполняются и не должны использоваться.
+`expiresIn` задаётся в секундах. Поля пользовательской авторизации `refreshToken`, `twoFactorToken`, `twoFactorProvider`, `currentUser` и `requiresTwoFactor` не входят в публичный M2M-контракт и не должны использоваться.
 
 ## Использование токена
 
@@ -206,8 +206,6 @@ Authorization: Bearer <accessToken.token>
 ```http
 Content-Type: application/json
 ```
-
-Для `/api/integrations/Tasks/*` заголовок `X-Organization-Id` не нужен: задача не привязана к одной организации, а доступ проверяется отдельно для каждого объекта.
 
 ## Обновление токена
 
@@ -330,7 +328,7 @@ Content-Type: application/json
 
 Знание ID не предоставляет доступ к произвольной заявке.
 
-При синхронном запросе отсутствие доступа возвращает `403 Forbidden`. В асинхронной очереди HTTP-запрос задачи может завершиться успешно, а ошибка возвращается в `objects[].status="Error"` и `objects[].message`.
+При синхронном чтении недоступной заявки возвращается `400 Bad Request`. В асинхронной очереди HTTP-запрос задачи может завершиться успешно, а ошибка возвращается в `objects[].status="Error"` и `objects[].message`.
 
 ## Идентификаторы заявки
 
@@ -355,7 +353,10 @@ Source: products/partner-integrations/scenarios/create-update-bid.md
 - организация существует;
 - организация создана партнёрским сервисом или текущему партнёру явно выдан доступ;
 - [`Organizations/Check`](../reference/endpoints.md#get-apiintegrationsorganizationscheck) возвращает `canCreateBids=true`;
-- для создания переданы водитель, автомобиль и минимум две точки.
+- для создания переданы водитель, автомобиль, груз и минимум две точки;
+- среди точек есть хотя бы одна погрузка и одна выгрузка.
+
+Организация задаётся обязательным полем `inn`: 10 цифр для юридического лица или 12 цифр для ИП. Это правило одинаково для синхронного и асинхронного вариантов.
 
 ## Синхронный вариант
 
@@ -371,13 +372,17 @@ Content-Type: application/json
   "bid": {
     "externalId": "ORDER-2471970",
     "comment": "Доставка груза",
+    "cargos": [
+      {
+        "name": "Паллетированный груз"
+      }
+    ],
     "bidPoints": [
       {
         "isLoadPoint": true,
         "planEnterDate": "2026-10-08T10:00:00",
         "geozone": {
           "location": {
-            "type": "Point",
             "coordinates": [37.6176, 55.7558]
           },
           "address": "Москва, улица Примерная, 1"
@@ -388,7 +393,6 @@ Content-Type: application/json
         "planEnterDate": "2026-10-09T10:00:00",
         "geozone": {
           "location": {
-            "type": "Point",
             "coordinates": [49.1064, 55.7961]
           },
           "address": "Казань, улица Примерная, 2"
@@ -442,9 +446,42 @@ Idempotency-Key: create-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
-              "bidPoints": [],
-              "car": {},
-              "driver": {}
+              "cargos": [
+                {
+                  "name": "Паллетированный груз"
+                }
+              ],
+              "bidPoints": [
+                {
+                  "isLoadPoint": true,
+                  "planEnterDate": "2026-10-08T10:00:00",
+                  "geozone": {
+                    "location": {
+                      "coordinates": [37.6176, 55.7558]
+                    },
+                    "address": "Москва, улица Примерная, 1"
+                  }
+                },
+                {
+                  "isLoadPoint": false,
+                  "planEnterDate": "2026-10-09T10:00:00",
+                  "geozone": {
+                    "location": {
+                      "coordinates": [49.1064, 55.7961]
+                    },
+                    "address": "Казань, улица Примерная, 2"
+                  }
+                }
+              ],
+              "car": {
+                "number": "А123АА777",
+                "brandName": "КАМАЗ"
+              },
+              "driver": {
+                "firstName": "Иван",
+                "lastName": "Иванов",
+                "phoneNumber": "+79991234567"
+              }
             }
           }
         }
@@ -454,35 +491,45 @@ Idempotency-Key: create-order-2471970-v1
 }
 ```
 
-В рабочем запросе заполните `bid` так же, как для [`Bids/Apply`](../reference/endpoints.md#post-apiintegrationsbidsapply). Если `bid.externalId` отсутствует, обработчик использует `objects[].key`.
+Поле `body` обязательно для `Write`. Если `bid.externalId` отсутствует, обработчик использует `objects[].key`.
 
 После завершения ID заявки находится в `objects[].id`. `isRouteBuilt` через очередь не возвращается.
 
 ## Создание связанных сущностей
 
 - водитель ищется в организации по `phoneNumber`; при отсутствии создаётся;
-- автомобиль и прицеп ищутся по `number`; при отсутствии создаются;
+- автомобиль ищется по `number`; при отсутствии создаётся;
+- прицеп необязателен; если он передан, `trailer.number` обязателен, а отсутствующий прицеп создаётся;
 - первый и второй водитель обрабатываются независимо.
 
 ## Требования к маршруту
 
 - минимум две точки;
+- среди точек должна быть хотя бы одна погрузка и одна выгрузка;
 - `planEnterDate` обязательно для каждой точки;
-- точки должны идти в строгом хронологическом порядке;
+- порядок маршрута определяется `planEnterDate`: CARGO.RUN сравнивает даты после приведения к UTC и сортирует точки по возрастанию; поле `order` во входной модели не передаётся;
 - время передаётся как локальное время координат точки без UTC-смещения;
 - часовой пояс определяется CARGO.RUN по координатам;
 - `geozone.location` и `geozone.address` обязательны;
 - координаты передаются как `[долгота, широта]`.
 
+Долгота должна находиться в диапазоне от −180 до 180, широта — от −90 до 90. Пара координат `[0, 0]` не принимается.
+
+## Груз, стоимость и НДС
+
+- передайте как минимум один элемент `cargos[]`;
+- у каждого груза обязательно поле `name`;
+- если `price` не передана, CARGO.RUN создаёт заявку на порожний пробег;
+- если `price` передана, поле `vat` обязательно;
+- `vat` передаётся строкой со значением `0`, `10`, `20` или `22`.
+
 В основном сценарии используются погрузка (`isLoadPoint=true`) и выгрузка (`isLoadPoint=false`).
 
 ## Обновление
 
-Обновление возможно:
+Если передан `externalId`, CARGO.RUN сначала ищет заявку с таким идентификатором внутри организации, найденной по `inn`. Найденная заявка обновляется; если совпадения нет, создаётся новая.
 
-- по `externalId`, если заявка создана текущим партнёром;
-- по внутреннему `id`, полученному от CARGO.RUN;
-- по `id` доступной заявки другого партнёра, если соответствующий доступ разрешён.
+Для дальнейшей работы также сохраняйте внутренний `id`, возвращённый CARGO.RUN.
 
 Частичное обновление не поддерживается. Передавайте полную актуальную модель. Точки маршрута при обновлении пересоздаются.
 
@@ -509,7 +556,7 @@ Source: products/partner-integrations/scenarios/receive-bids.md
 Используйте [`GET /api/integrations/Bids/GetCurrentList`](../reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist).
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 Authorization: Bearer <accessToken.token>
 ```
 
@@ -529,6 +576,8 @@ Authorization: Bearer <accessToken.token>
 ```
 
 В `externalId` возвращается `ExternalPlatformOrderId`.
+
+Значение `externalId` определяется методом, которым получена запись: `GetCurrentList` возвращает идентификатор заказа, указанный перевозчиком для платформы партнёра, а `GetList` — идентификатор, который партнёр передал при создании собственной заявки.
 
 ## Асинхронный список
 
@@ -574,6 +623,7 @@ Authorization: Bearer <accessToken.token>
 
 ```http
 GET <baseUrl>/api/integrations/Bids/GetList
+Authorization: Bearer <accessToken.token>
 ```
 
 Он возвращает только заявки текущего интеграционного клиента, имеющие его `externalId`. `GetCurrentList` и `ReadQuery` предназначены для заявок, которые перевозчики транслируют платформе.
@@ -595,6 +645,12 @@ Source: products/partner-integrations/scenarios/track-execution.md
 | Плановый маршрут | [`GET /api/integrations/Bids/GetPlannedRoute`](../reference/endpoints.md#get-apiintegrationsbidsgetplannedroute) |
 | Фактический маршрут | [`GET /api/integrations/Bids/GetActualRoute`](../reference/endpoints.md#get-apiintegrationsbidsgetactualroute) |
 | Сообщения и файлы | [`GET /api/integrations/Bids/GetDriverMessages`](../reference/endpoints.md#get-apiintegrationsbidsgetdrivermessages) |
+
+## Статус и события — разные данные
+
+Поле `status` в карточке или краткой модели заявки содержит её текущее состояние: `New`, `Planned`, `Started`, `Canceled` или `Done`. Именно это поле используйте для синхронизации статуса заказа во внешней системе.
+
+`Bids/GetEvents` возвращает этапы исполнения, вычисленные по фактическим датам. Отмена и удаление представлены событиями `BidCanceled` и `BidDeleted`. Текущее состояние заявки всё равно определяйте по `BidStatus`, а события используйте как хронологию изменений.
 
 ## Полное чтение через очередь
 
@@ -638,15 +694,32 @@ ETA находится в `bid.estimation`:
 
 `estimatedDate` возвращается в часовом поясе последней точки заявки.
 
-## События
+Фрагмент ответа `Bids/Get`:
 
 ```json
 {
-  "type": "EnteredPointByDriver",
-  "fixedAt": "2026-10-08T12:00:00+03:00",
-  "bidPointId": 456,
-  "bidPointOrder": 1
+  "id": 12345,
+  "status": "Started",
+  "updatedAt": "2026-10-08T12:05:00+03:00",
+  "externalId": "ORDER-2471970",
+  "estimation": {
+    "estimatedDate": "2026-10-08T15:00:00+03:00",
+    "manualEstimatedLeaveDate": null
+  }
 }
+```
+
+## События
+
+```json
+[
+  {
+    "type": "EnteredPointByDriver",
+    "fixedAt": "2026-10-08T12:00:00+03:00",
+    "bidPointId": 456,
+    "bidPointOrder": 1
+  }
+]
 ```
 
 Для события точки `fixedAt` использует часовой пояс этой точки, для остальных событий — часовой пояс организации.
@@ -654,6 +727,17 @@ ETA находится в `bid.estimation`:
 ## Плановый маршрут
 
 Содержит расстояния в метрах и продолжительность в секундах. Синхронный `GetPlannedRoute` возвращает расчётные показатели; асинхронный `IntegrationBidDetailsModel.plannedRoute` использует ту же модель.
+
+```json
+{
+  "id": 70001,
+  "distance": 815000,
+  "duration": 39600,
+  "distanceWithoutEmptyMileage": 800000,
+  "emptyMileageDistance": 15000,
+  "durationWithoutEmptyMileage": 37800
+}
+```
 
 ## Фактический маршрут
 
@@ -666,11 +750,49 @@ Authorization: Bearer <accessToken.token>
 
 `isMobile=true` означает мобильные координаты, `false` — другой источник, например телематика.
 
+```json
+[
+  {
+    "emptyMileageRoute": [],
+    "mainRoute": [
+      {
+        "coordinate": [37.6176, 55.7558],
+        "fixedAt": "2026-10-08T12:00:00+03:00"
+      }
+    ],
+    "carId": 501,
+    "carNumber": "А123АА777",
+    "hasActiveMileage": true,
+    "isMobile": true
+  }
+]
+```
+
 ## Сообщения и файлы
 
-Синхронный метод поддерживает OData и `X-MetaCount`. В полном асинхронном ответе сообщения находятся в `driverMessages`.
+Синхронный метод поддерживает OData и `X-MetaCount`. Он возвращает расширенную `ChatMessageGetModel`, включая `type` и `flags`. В полном асинхронном ответе `driverMessages` содержит сокращённую модель без этих двух полей.
 
-`accessUrlLink` — временная ссылка на файл, обычно действующая 20–30 минут. Скачайте файл сразу либо повторно прочитайте заявку для получения новой ссылки.
+`accessUrlLink` — временная ссылка на файл. Скачайте файл сразу либо повторно прочитайте заявку для получения новой ссылки.
+
+```json
+[
+  {
+    "id": 80001,
+    "text": "Документы загружены",
+    "createdAt": "2026-10-08T12:10:00+03:00",
+    "chatId": 90001,
+    "isDeleted": false,
+    "files": [
+      {
+        "id": 81001,
+        "originalFileName": "documents.pdf",
+        "accessUrlLink": "https://files.example/download/temporary-token"
+      }
+    ],
+    "type": "User"
+  }
+]
+```
 
 ---
 
@@ -706,7 +828,7 @@ Webhook обеспечивает малую задержку, но не гара
 ## Пример запроса
 
 ```text
-$filter=updatedAt gt 2026-10-07T09:59:55Z&$orderby=updatedAt,id&$top=100
+$filter=updatedAt gt 2026-10-07T07:59:55Z&$orderby=updatedAt,id&$top=100
 ```
 
 ## Периодическая сверка
@@ -750,7 +872,7 @@ Source: products/partner-integrations/sync-api.md
 Для инкрементальной синхронизации используйте стабильную сортировку:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 ```
 
 ## Форматы
@@ -758,11 +880,14 @@ GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-
 | Данные | Формат |
 |---|---|
 | Ответные дата и время | ISO 8601 с UTC-смещением |
+| Дата без времени | `YYYY-MM-DD`, без часового пояса |
 | Плановые даты точек | Локальное время координат точки без UTC-смещения |
-| Координаты | `[longitude, latitude]` |
+| Координаты | `[longitude, latitude]`, WGS 84, градусы |
 | Расстояние | Метры |
 | Продолжительность | Секунды |
 | Enum | Строковое имя значения |
+
+`updatedAt` представляет абсолютный момент времени. В OData-фильтрах рекомендуется приводить курсор к UTC и передавать его с суффиксом `Z`; значение со смещением и эквивалентное значение в UTC сравниваются одинаково.
 
 ## Ошибки
 
@@ -789,8 +914,6 @@ POST <baseUrl>/api/integrations/Tasks/Queue
 GET  <baseUrl>/api/integrations/Tasks/Queue?id={taskId}
 POST <baseUrl>/api/integrations/Tasks/Ping
 ```
-
-`X-Organization-Id` не требуется.
 
 ## Поддерживаемые комбинации
 
@@ -853,6 +976,8 @@ Authorization: Bearer <accessToken.token>
 
 ## Два уровня ошибок
 
+Ниже показан сокращённый фрагмент ответа, содержащий только поля, важные для обработки ошибки объекта:
+
 ```json
 {
   "status": "Completed",
@@ -861,7 +986,7 @@ Authorization: Bearer <accessToken.token>
       "type": "Bid",
       "id": 12345,
       "status": "Error",
-      "message": "Bid is not found or is not available for the client.",
+      "message": "Заявка не найдена или недоступна интеграционному клиенту.",
       "body": null
     }
   ]
@@ -928,24 +1053,95 @@ HMAC_SHA256(callbackSecret, "<timestamp>.<raw-json-body>")
 
 Проверяйте подпись по исходным байтам тела до десериализации. Рекомендуется также проверять допустимое расхождение времени и использовать постоянное по времени сравнение подписей.
 
-## Тело
+## Модель тела
+
+События `queued-task.finished` и `entity.changed` используют модель [`QueuedApiTaskCallbackPayload`](reference/endpoints.md#queuedapitaskcallbackpayload). Поле `origin` определяет источник задачи:
+
+| Событие | `origin` | Назначение |
+|---|---|---|
+| `queued-task.finished` | `Request` | Результат команды, которую партнёр поставил через `POST /Tasks/Queue` |
+| `entity.changed` | `Subscription` | Данные заявки, задачу чтения которой CARGO.RUN создал по подписке |
+
+### `queued-task.finished`
 
 ```json
 {
-  "eventId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "eventId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
   "taskId": 123456,
   "action": "Read",
   "status": "Completed",
-  "origin": "Subscription",
+  "origin": "Request",
   "completedAt": "2026-10-07T10:00:00Z",
   "attemptCount": 1,
   "maxAttemptCount": 3,
   "message": null,
-  "objects": []
+  "objects": [
+    {
+      "status": "Success",
+      "type": "Bid",
+      "id": 12345,
+      "key": null,
+      "version": null,
+      "query": null,
+      "body": {
+        "externalId": "ORDER-2471970",
+        "bid": {
+          "id": 12345,
+          "status": "Started"
+        }
+      },
+      "message": null
+    }
+  ]
 }
 ```
 
-`eventId` используется для дедупликации повторных доставок.
+Состав `objects[].body` определяется исходной командой: для `Read / Bid / Default` это `IntegrationBidDetailsModel`, для `Read / Bid / Summary` — `IntegrationBidListModel`.
+
+### `entity.changed`
+
+```json
+{
+  "eventId": "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff",
+  "taskId": 123457,
+  "action": "Read",
+  "status": "Completed",
+  "origin": "Subscription",
+  "completedAt": "2026-10-07T10:05:00Z",
+  "attemptCount": 1,
+  "maxAttemptCount": 3,
+  "message": null,
+  "objects": [
+    {
+      "status": "Success",
+      "type": "Bid",
+      "id": 12345,
+      "key": null,
+      "version": null,
+      "query": null,
+      "body": {
+        "id": 12345,
+        "externalId": "ORDER-2471970",
+        "status": "Canceled",
+        "isDeleted": false,
+        "createdAt": "2026-10-06T10:00:00+03:00",
+        "updatedAt": "2026-10-07T13:05:00+03:00"
+      },
+      "message": null
+    }
+  ]
+}
+```
+
+В примере подписка настроена с `modelType=Summary`, поэтому `objects[].body` имеет модель `IntegrationBidListModel`. При `modelType=Default` в `body` приходит `IntegrationBidDetailsModel`.
+
+`eventId` уникален для доставки и используется для дедупликации повторных webhook. `taskId` позволяет повторно получить тот же результат методом `GET /api/integrations/Tasks/Queue?id={taskId}`.
+
+`attemptCount` и `maxAttemptCount` относятся к обработке асинхронной задачи CARGO.RUN. Это не счётчики доставки webhook. Состояние доставки доступно при чтении задачи в полях `callbackStatus`, `callbackAttemptCount`, `callbackMaxAttemptCount`, `callbackNextRetryAt`, `callbackDeliveredAt` и `lastError`.
+
+### `ping`
+
+`ping` — тест доставки на тот же `callbackTarget`. Не используйте его тело как бизнес-событие и не сохраняйте как изменение заявки. Получатель проверяет timestamp и подпись так же, как для остальных webhook, после чего возвращает `2xx`.
 
 ## Подписка на заявки
 
@@ -961,6 +1157,8 @@ CARGO.RUN настраивает подписку:
 ```
 
 Для партнёрских сервисов поддерживается только `Bid`.
+
+`entityType` определяет тип сущности подписки; в текущем партнёрском контракте единственное поддерживаемое значение — строка `Bid`. `modelType` определяет форму `objects[].body`: `Summary` или `Default`.
 
 ### `Summary`
 
@@ -1051,6 +1249,17 @@ $orderby=updatedAt,id
 
 При удалении или прекращении трансляции CARGO.RUN отправляет изменение прежней аудитории. Последующий `Read` может вернуть объектную ошибку о недоступности. Поле `isDeleted=true` в краткой модели означает, что партнёр должен прекратить отслеживание заявки.
 
+```json
+{
+  "id": 12345,
+  "externalId": "ORDER-2471970",
+  "status": "Canceled",
+  "isDeleted": true,
+  "createdAt": "2026-10-06T10:00:00+03:00",
+  "updatedAt": "2026-10-08T14:30:00+03:00"
+}
+```
+
 ## Совместимость
 
 Клиент должен:
@@ -1061,13 +1270,15 @@ $orderby=updatedAt,id
 - не полагаться на порядок полей JSON;
 - учитывать, что в ответы могут добавляться новые необязательные поля.
 
+Если неизвестное значение пришло в обязательном поле, включая `BidStatus`, сохраните исходную строку, продолжайте хранить и обновлять заявку, выполните следующую контрольную синхронизацию и сформируйте предупреждение для мониторинга. Не подменяйте неизвестное значение ближайшим известным статусом и не прекращайте обработку остальных заявок.
+
 ---
 
 Source: products/partner-integrations/reference/endpoints.md
 
 # Методы API, модели и значения
 
-Во всех путях `<baseUrl>` — адрес API CARGO.RUN. Все методы, кроме `Account/Token`, требуют `Authorization: Bearer <token>`.
+Во всех путях `<baseUrl>` — адрес API CARGO.RUN. Адреса тестовой и промышленной сред запрашиваются у команды CARGO.RUN при подключении. Все методы, кроме `Account/Token`, требуют `Authorization: Bearer <token>`.
 
 ## Сводная таблица
 
@@ -1116,7 +1327,7 @@ Source: products/partner-integrations/reference/endpoints.md
 
 Тело: [`CreateIntegrationOrganizationContext`](#createintegrationorganizationcontext).
 
-Поиск выполняется по ИНН. Без ИНН используется служебная организация. Успех: `200 OK`, объект с `id` организации.
+Поиск выполняется по ИНН. Без ИНН используется служебная организация. Успех: `200 OK`, модель [`OrganizationApplyResult`](#organizationapplyresult).
 
 ## `POST /api/integrations/Bids/Apply`
 
@@ -1212,18 +1423,18 @@ Source: products/partner-integrations/reference/endpoints.md
 | `202` | Асинхронная команда принята в обработку; фактическое поведение постановки задач |
 | `400` | Ошибка формата, валидации или бизнес-правила |
 | `401` | Токен отсутствует, недействителен или истёк |
-| `403` | Нет доступа к операции, организации или заявке |
+| `403` | Нет доступа к операции или организации |
 | `429` | Превышена допустимая частота запросов |
 
 ## Дополнительные интеграционные методы
 
-OpenAPI также содержит `Organizations/GetClients`, `Organizations/MarkClientPaid` и `Drivers/ConfirmAuthorization`. Они относятся к привлечению клиентов и подтверждению авторизации водителей, а не к основному сценарию обмена заявками. Их нельзя включать в реализацию партнёра без отдельного согласования бизнес-сценария и прав с CARGO.RUN.
+Методы `Organizations/GetClients`, `Organizations/MarkClientPaid` и `Drivers/ConfirmAuthorization` относятся к привлечению клиентов и подтверждению авторизации водителей, а не к основному сценарию обмена заявками. Их нельзя включать в реализацию партнёра без отдельного согласования бизнес-сценария и прав с CARGO.RUN.
 
 ---
 
 # Модели запросов и ответов
 
-Колонка «Обязательно» учитывает правила партнёрского API. Для создания заявки необходимо передать `bid`, `inn`, автомобиль, водителя, минимум две точки и `planEnterDate` каждой точки. Поле `IntegrationBidEditModel.id` при создании можно не передавать.
+Колонка «Обязательно» отражает контракт партнёрского API с учётом бизнес-валидации конкретных операций. Все enum в JSON передаются строковыми значениями из раздела «Возможные значения полей».
 
 ## Результаты операций
 
@@ -1232,11 +1443,6 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | Поле | Тип | Обязательно | `null` | Описание |
 |---|---|---:|---:|---|
 | `accessToken` | `AccessToken` | Да | Нет | Токен доступа и срок действия |
-| `refreshToken` | `string` | Нет | Да | Для M2M не заполняется |
-| `twoFactorToken` | `object` | Нет | Да | Для M2M не заполняется |
-| `currentUser` | `object` | Нет | Да | Для M2M не заполняется |
-| `requiresTwoFactor` | `boolean` | Да | Нет | Для M2M всегда `false` |
-| `twoFactorProvider` | `string` | Нет | Да | Для M2M не заполняется |
 
 ### `AccessToken`
 
@@ -1297,9 +1503,9 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `grantType` | `string` | Нет | Да | — | — |
-| `clientId` | `string` | Нет | Да | — | — |
-| `clientSecret` | `string` | Нет | Да | — | — |
+| `grantType` | `string` | Да | Нет | значение: `client_credentials` | Тип выдачи токена. Передавайте фиксированное значение `client_credentials`. |
+| `clientId` | `string` | Да | Нет | — | Идентификатор интеграционного клиента, выданный CARGO.RUN. |
+| `clientSecret` | `string` | Да | Нет | — | Секрет интеграционного клиента, выданный CARGO.RUN. |
 
 ### `IntegrationOrganizationCheckModel`
 
@@ -1308,8 +1514,8 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `exists` | `boolean` | Да | Нет | — | Организация с указанным ИНН существует. |
-| `canCreateBids` | `boolean` | Да | Нет | — | Для организации разрешено создавать заявки внешним партнёрский сервисм. |
-| `hasAccess` | `boolean` | Да | Нет | — | Текущая партнёрский сервис уже имеет доступ к организации. |
+| `canCreateBids` | `boolean` | Да | Нет | — | Для организации разрешено создавать заявки партнёрским сервисам. |
+| `hasAccess` | `boolean` | Да | Нет | — | Текущий партнёрский сервис уже имеет доступ к организации. |
 
 ### `CreateIntegrationOrganizationContext`
 
@@ -1324,8 +1530,8 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `bid` | `IntegrationBidEditModel` | Нет | Нет | — | Данные заявки. |
-| `inn` | `string` | Нет | Да | — | ИНН организации. |
+| `bid` | `IntegrationBidEditModel` | Да | Нет | — | Данные заявки. |
+| `inn` | `string` | Да | Нет | — | ИНН организации перевозчика: 10 цифр для организации или 12 цифр для ИП. Обязателен при синхронном и асинхронном создании или обновлении заявки. |
 
 ### `IntegrationBidEditModel`
 
@@ -1333,19 +1539,19 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `id` | `int64` | Да | Нет | — | Идентификатор заявки. Можно не указывать при создании.<br>При последующем обновлении заявки необходимо указывать. |
-| `externalId` | `string` | Нет | Да | — | Идентификатор заявки на партнёрскому сервису. |
-| `comment` | `string` | Нет | Да | — | Комментарий. |
-| `clientBidNumber` | `string` | Нет | Да | — | Номер заявки клиента. |
+| `id` | `int64` | Нет | Нет | — | Идентификатор заявки. Можно не указывать при создании.<br>При последующем обновлении заявки необходимо указывать. |
+| `externalId` | `string` | Нет | Да | max length: `72` | Идентификатор заявки в партнёрском сервисе. |
+| `comment` | `string` | Нет | Да | max length: `4096` | Комментарий. |
+| `clientBidNumber` | `string` | Нет | Да | max length: `256` | Номер заявки клиента. |
 | `clientBidDate` | `date-time` | Нет | Да | — | Дата заявки клиента. |
-| `price` | `double` | Нет | Да | — | Стоимость перевозки. |
+| `price` | `double` | Нет | Да | min: `0`; max: `9999999999` | Стоимость перевозки.<br>Если не указана, заявка создаётся как заявка на порожний пробег. |
 | `isVatTop` | `boolean` | Нет | Да | — | НДС начисляется сверху. |
-| `vat` | `string` | Нет | Да | — | Ставка НДС: текст должен содержать 0, 10, 20 или 22. |
-| `bidPoints` | `IntegrationBidPointModel[]` | Нет | Да | — | Точки маршрута. |
-| `cargos` | `CargoModel[]` | Нет | Да | — | Грузы. |
-| `car` | `IntegrationVehicleModel` | Нет | Нет | — | ТС. |
-| `trailer` | `IntegrationVehicleModel` | Нет | Нет | — | Прицеп. |
-| `driver` | `IntegrationDriverModel` | Нет | Нет | — | Водитель. |
+| `vat` | `string` | Нет | Да | — | Ставка НДС: текст должен содержать 0, 10, 20 или 22.<br>Обязательна, если указана стоимость перевозки. |
+| `bidPoints` | `IntegrationBidPointModel[]` | Да | Нет | min items: `2` | Точки маршрута: минимум одна точка погрузки и одна точка выгрузки. CARGO.RUN сортирует точки по `planEnterDate`. |
+| `cargos` | `CargoModel[]` | Да | Нет | — | Грузы. Передайте как минимум один груз; у каждого груза обязательно поле `name`. |
+| `car` | `IntegrationVehicleModel` | Да | Нет | — | ТС. |
+| `trailer` | `IntegrationVehicleModel` | Нет | Нет | — | Прицеп. Необязателен; если объект передан, поле `number` обязательно. |
+| `driver` | `IntegrationDriverModel` | Да | Нет | — | Водитель. |
 | `secondaryDriver` | `IntegrationDriverModel` | Нет | Нет | — | Второй водитель. |
 
 ### `IntegrationBidListModel`
@@ -1355,11 +1561,11 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | Идентификатор заявки Cargo.Run. |
-| `externalId` | `string` | Нет | Да | — | Идентификатор заявки на партнёрскому сервису. |
+| `externalId` | `string` | Нет | Да | — | В `Bids/GetList` — идентификатор, переданный партнёром при создании заявки; в `Bids/GetCurrentList` — идентификатор заказа, указанный перевозчиком для платформы партнёра. |
 | `status` | `BidStatus` | Да | Нет | — | Статус заявки BidStatus |
 | `isDeleted` | `boolean` | Да | Нет | — | Заявка удалена. Данные удалённой заявки не читаются, партнёрскому сервису следует прекратить её отслеживание |
 | `createdAt` | `date-time` | Да | Нет | — | Дата создания в часовом поясе организации |
-| `updatedAt` | `date-time` | Да | Нет | — | Дата последнего изменения заявки.<br>Используется как курсор для получения изменённых заявок: $filter=updatedAt gt {курсор}&amp;$orderby=updatedAt.<br>Рекомендуется запрашивать с небольшим перекрытием (курсор минус несколько секунд). |
+| `updatedAt` | `date-time` | Да | Нет | — | Дата последнего изменения заявки. Для курсорной выборки используйте `$filter=updatedAt gt {курсор}&$orderby=updatedAt,id` и небольшое перекрытие интервалов. |
 
 ### `BidForExternalSyncModel`
 
@@ -1369,7 +1575,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `price` | `double` | Нет | Да | — | Цена |
-| `priceWithoutVatOnTop` | `double` | Нет | Да | — | Цена без НДС. Будет null, если IsVatTop = false |
+| `priceWithoutVatOnTop` | `double` | Нет | Да | — | Цена без НДС. Будет null, если isVatTop = false |
 | `status` | `BidStatus` | Да | Нет | — | Статус заявки |
 | `createdAt` | `date-time` | Да | Нет | — | Дата создания заявки |
 | `externalUpdatedAt` | `date-time` | Нет | Да | — | Дата обновления из внешней системы |
@@ -1421,7 +1627,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | `paymentPeriodInDays` | `int32` | Нет | Да | — | Срок оплаты в днях |
 | `paymentPeriodType` | `PaymentPeriodType` | Нет | Да | — | — |
 | `invoiceTriggerType` | `InvoiceTriggerType` | Нет | Да | — | — |
-| `sourceType` | `SourceType` | Да | Нет | — | Тип источника заявки |
+| `sourceType` | `SourceType` | Да | Нет | — | Источник заявки в CARGO.RUN. Поле возвращается сервером; партнёр его не задаёт. |
 | `acceptedByDriverAt` | `date-time` | Нет | Да | — | Дата принятия заявки водителем |
 | `hasItemsChange` | `boolean` | Да | Нет | — | true если есть перецепка/пересменка |
 | `isDeleted` | `boolean` | Да | Нет | — | Является ли сущность удаленной? |
@@ -1429,7 +1635,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | `hasServicePoints` | `boolean` | Да | Нет | — | true если есть точки сервисных работ |
 | `isPreBid` | `boolean` | Да | Нет | — | Предзаявка |
 | `payment` | `BidPaymentGetModel` | Нет | Нет | — | Информация об оплате заявки |
-| `accessPermitIds` | `int64`[] | Нет | Да | — | Допуски и разрешения |
+| `accessPermitIds` | `int64[]` | Нет | Да | — | Допуски и разрешения |
 
 ### `IntegrationBidDetailsModel`
 
@@ -1439,11 +1645,11 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `externalId` | `string` | Нет | Да | — | Идентификатор заявки на стороне партнёрского сервиса: внешний идентификатор для собственных заявок<br>или идентификатор заказа на партнёрскому сервису для транслируемых. |
+| `externalId` | `string` | Нет | Да | — | Идентификатор заявки на стороне партнёрского сервиса: внешний идентификатор для собственных заявок<br>или идентификатор заказа в партнёрском сервисе для транслируемых. |
 | `bid` | `IntegrationBidDetailsModel.bid` | Нет | Нет | — | Модель заявки для синхронизации с внешними сервисами |
 | `plannedRoute` | `IntegrationBidDetailsModel.plannedRoute` | Нет | Нет | — | — |
 | `events` | `IntegrationBidDetailsModel.events[]` | Нет | Да | — | События по заявке, вычисленные из фактических дат, как в методе Bids/GetEvents. |
-| `driverMessages` | `IntegrationBidDetailsModel.driverMessages[]` | Нет | Да | — | Сообщения и файлы, отправленные водителями по заявке. |
+| `driverMessages` | `IntegrationBidDetailsModel.driverMessages[]` | Нет | Да | — | Сокращённые сообщения водителя. Поля `type` и `flags` доступны только в синхронной модели `ChatMessageGetModel`. |
 
 ### `IntegrationBidEventModel`
 
@@ -1488,13 +1694,13 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | `createdAt` | `date-time` | Да | Нет | — | Дата написания |
 | `chatId` | `int64` | Да | Нет | — | — |
 | `createdById` | `int64` | Нет | Да | — | — |
-| `fileId` | `int64` | Нет | Да | — | — |
-| `fileIds` | `int64`[] | Нет | Да | — | — |
-| `file` | `FileModel` | Нет | Нет | — | Устаревшее свойство, используйте Files |
+| `fileId` | `int64` | Нет | Да | — | Устаревшее поле. В новой интеграции используйте `files[]`. |
+| `fileIds` | `int64[]` | Нет | Да | — | Устаревшее поле. В новой интеграции используйте `files[]`. |
+| `file` | `FileModel` | Нет | Нет | — | Устаревшее поле. В новой интеграции используйте `files[]`. |
 | `createdBy` | `UserChatModel` | Нет | Нет | — | Профиль того, кто написал сообщение |
 | `isDeleted` | `boolean` | Да | Нет | — | — |
 | `userMessagesInfo` | `UserMessageInfoModel[]` | Нет | Да | — | — |
-| `files` | `FileModel[]` | Нет | Да | — | — |
+| `files` | `FileModel[]` | Нет | Да | — | Авторитетный список файлов сообщения для новой интеграции. |
 | `type` | `UserMessageType` | Нет | Нет | — | — |
 
 ### `QueuedApiTaskCommandsCollectionModel`
@@ -1507,7 +1713,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 ### `QueuedApiTaskAddCommandsModel`
 
-Модель задания с указаным типом действия и объектами
+Модель задания с указанным типом действия и объектами
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
@@ -1521,14 +1727,14 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `modelType` | `QueuedApiTaskModelType` | Да | Нет | — | Тип модели объекта |
-| `status` | `QueuedApiTaskObjectStatusJson` | Нет | Нет | — | Статус записи или чтения объекта |
-| `body` | `JsonObject` | Нет | Нет | — | Данные |
+| `status` | `QueuedApiTaskObjectStatusJson` | Нет | Нет | — | Диагностический статус. В документированных партнёрских командах не передаётся. |
+| `body` | `JsonObject` | Нет | Нет | — | Тело объекта. Обязательно для `action=Write`; для `Read` и `ReadQuery` не передаётся. |
 | `key` | `string` | Нет | Да | — | Внешний ключ объекта |
 | `type` | `InternalEntityType` | Да | Нет | — | Тип объекта |
-| `sourceType` | `SourceType` | Нет | Да | — | — |
+| `sourceType` | `SourceType` | Нет | Да | — | Служебное поле. В документированных партнёрских командах не передаётся. |
 | `id` | `int64` | Нет | Да | — | Внутренний идентификатор объекта, если null или 0, то будет создан новый объект |
-| `version` | `uuid` | Нет | Да | — | Версия объекта<br>Если null и long? QueuedApiTaskObjectMetadataModel.Id не null, то версию контролировать не требуется |
-| `query` | `string` | Нет | Да | — | OData фильтр<br>Поля long? QueuedApiTaskObjectMetadataModel.Id, Guid? QueuedApiTaskObjectMetadataModel.Version, string QueuedApiTaskObjectMetadataModel.Key должны быть пустыми при использовании string QueuedApiTaskObjectMetadataModel.Query |
+| `version` | `uuid` | Нет | Да | — | Версия объекта. Если указано `id`, а `version` не передан, проверка версии не выполняется. |
+| `query` | `string` | Нет | Да | — | OData-запрос для `ReadQuery`. При его использовании поля `id`, `version` и `key` не передаются. |
 
 ### `QueuedApiTaskGetResultsModel`
 
@@ -1540,7 +1746,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | `status` | `QueuedApiTaskStatus` | Да | Нет | — | Статус задания |
 | `origin` | `QueuedApiTaskOrigin` | Да | Нет | — | Источник задания: запрос клиента или подписка на изменения |
 | `readyInMsec` | `int64` | Да | Нет | — | Примерное время, через которое можно будет получить результат |
-| `remainingObjectCount` | `int32` | Да | Нет | — | Оставшиеся количество объектов на выполнение |
+| `remainingObjectCount` | `int32` | Да | Нет | — | Оставшееся количество объектов на выполнение |
 | `attemptCount` | `int32` | Да | Нет | — | Текущая попытка обработки |
 | `maxAttemptCount` | `int32` | Да | Нет | — | Максимально допустимое количество попыток |
 | `nextRetryAt` | `date-time` | Нет | Да | — | Следующее запланированное время повтора |
@@ -1564,37 +1770,9 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 | `key` | `string` | Нет | Да | — | Внешний ключ объекта |
 | `type` | `InternalEntityType` | Да | Нет | — | Тип объекта |
 | `sourceType` | `SourceType` | Нет | Да | — | — |
-| `id` | `int64` | Нет | Да | — | Внутренний идентификатор объекта, если null или 0, то будет создан новый объект |
-| `version` | `uuid` | Нет | Да | — | Версия объекта<br>Если null и long? QueuedApiTaskObjectMetadataModel.Id не null, то версию контролировать не требуется |
-| `query` | `string` | Нет | Да | — | OData фильтр<br>Поля long? QueuedApiTaskObjectMetadataModel.Id, Guid? QueuedApiTaskObjectMetadataModel.Version, string QueuedApiTaskObjectMetadataModel.Key должны быть пустыми при использовании string QueuedApiTaskObjectMetadataModel.Query |
-
-### `OrganizationIntegrationLeadListModel`
-
-Клиент, привлечённый интеграционным партнёром.
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `organizationId` | `int64` | Да | Нет | — | Идентификатор организации в CARGO.RUN |
-| `leadId` | `string` | Нет | Да | — | Идентификатор из партнёрского сервиса |
-| `name` | `string` | Нет | Да | — | Название организации |
-| `inn` | `string` | Нет | Да | — | ИНН организации |
-| `utmSource` | `string` | Нет | Да | — | Источник перехода |
-| `registeredAt` | `date-time` | Да | Нет | — | Дата регистрации организации |
-| `paidAt` | `date-time` | Нет | Да | — | Дата подтверждения оплаты со стороны партнёрского сервиса |
-
-### `MarkOrganizationIntegrationLeadPaidContext`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `organizationId` | `int64` | Да | Нет | — | Идентификатор организации в CARGO.RUN |
-| `leadId` | `string` | Да | Да | — | Идентификатор из партнёрского сервиса |
-
-### `ConfirmDriverAuthorizationContext`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `driverId` | `int64` | Нет | Да | — | Id водителя. |
-| `phoneNumber` | `string` | Нет | Да | — | Номер телефона водителя. |
+| `id` | `int64` | Нет | Да | — | Внутренний идентификатор обработанного объекта CARGO.RUN. |
+| `version` | `uuid` | Нет | Да | — | Версия объекта. Если указано `id`, а `version` отсутствует, проверка версии не выполнялась. |
+| `query` | `string` | Нет | Да | — | OData-запрос задачи `ReadQuery`; поля `id`, `version` и `key` для такой задачи отсутствуют. |
 
 ## Связанные модели
 
@@ -1602,17 +1780,13 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `averageValue` | `double` | Нет | Да | — | Average value (optional) |
+| `averageValue` | `double` | Нет | Да | — | Среднее значение |
 
 ### `AvoidSpecialRoadFlags`
-
-Опции избегания особых дорог
 
 Схема не содержит именованных полей.
 
 ### `AvoidTollRoadFlags`
-
-Опции избегания платных дорог
 
 Схема не содержит именованных полей.
 
@@ -1620,7 +1794,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `estimatedDate` | `date-time` | Нет | Да | — | Расчетная дата вьезда |
+| `estimatedDate` | `date-time` | Нет | Да | — | Расчётная дата въезда |
 | `manualEstimatedLeaveDate` | `date-time` | Нет | Да | — | Ручная дата выезда из точки |
 
 ### `BidPaymentGetModel`
@@ -1653,7 +1827,7 @@ OpenAPI также содержит `Organizations/GetClients`, `Organizations/M
 
 ### `BidPointViewModel`
 
-Bid point model for a view
+Точка маршрута
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
@@ -1696,8 +1870,6 @@ Bid point model for a view
 
 ### `BidStatus`
 
-Bid statuses
-
 Схема не содержит именованных полей.
 
 ### `BidTemperatureRegimeModel`
@@ -1721,9 +1893,9 @@ Bid statuses
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
-| `name` | `string` | Да | Да | — | Наименование |
+| `name` | `string` | Да | Нет | — | Наименование |
 | `weight` | `double` | Нет | Да | — | Вес |
-| `volume` | `double` | Нет | Да | — | Обьем |
+| `volume` | `double` | Нет | Да | — | Объём |
 | `length` | `double` | Нет | Да | — | Длина |
 | `height` | `double` | Нет | Да | — | Высота |
 | `width` | `double` | Нет | Да | — | Ширина |
@@ -1749,13 +1921,33 @@ Bid statuses
 | `phoneNumber` | `string` | Нет | Да | — | Номер телефона, если такой контакт был введен ранее, существующие данные будут использованы |
 | `name` | `string` | Нет | Да | — | Имя |
 
+### `CounterpartyRegistryEntryViewModel`
+
+Запись реестра недобросовестных контрагентов
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `inn` | `string` | Нет | Да | — | — |
+| `ratings` | `CounterpartyRegistryRatingViewModel[]` | Нет | Да | — | — |
+| `insolvencyRank` | `int32` | Да | Нет | — | — |
+| `comments` | `string[]` | Нет | Да | — | — |
+
+### `CounterpartyRegistryRatingViewModel`
+
+Оценка контрагента в реестре
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `organizationName` | `string` | Нет | Да | — | — |
+| `comment` | `string` | Нет | Да | — | — |
+
 ### `CounterpartyViewModel`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `name` | `string` | Нет | Да | — | — |
-| `insolvencyRegistryEntry` | `InsolvencyRegistryEntryGetModel` | Нет | Нет | — | — |
+| `insolvencyRegistryEntry` | `CounterpartyRegistryEntryViewModel` | Нет | Нет | — | — |
 
 ### `CustomPointTypeModel`
 
@@ -1786,13 +1978,6 @@ Bid statuses
 | `storageType` | `int32` | Да | Нет | — | — |
 | `lastAccessedAt` | `date-time` | Нет | Да | — | — |
 
-### `FuelTankListViewModel`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `totalVolume` | `double` | Да | Нет | — | Объем бака |
-| `fuelConsumption` | `double` | Да | Нет | — | Расход топлива |
-
 ### `IdModel`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
@@ -1806,22 +1991,6 @@ Bid statuses
 | `id` | `int64` | Да | Нет | — | — |
 | `name` | `string` | Нет | Да | — | — |
 
-### `InsolvencyRegistryEntryGetModel`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `inn` | `string` | Нет | Да | — | — |
-| `ratings` | `InsolvencyRegistryEntryRatingGetModel[]` | Нет | Да | — | — |
-| `insolvencyRank` | `int32` | Да | Нет | — | — |
-| `comments` | `string`[] | Нет | Да | — | — |
-
-### `InsolvencyRegistryEntryRatingGetModel`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `organizationName` | `string` | Нет | Да | — | — |
-| `comment` | `string` | Нет | Да | — | — |
-
 ### `IntegrationBidEventType`
 
 Схема не содержит именованных полей.
@@ -1832,9 +2001,9 @@ Bid statuses
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `location` | `PointEditModel` | Нет | Нет | — | Координаты точки. |
+| `location` | `PointEditModel` | Да | Нет | — | Координаты точки: [долгота, широта]. |
 | `city` | `string` | Нет | Да | — | — |
-| `address` | `string` | Нет | Да | — | — |
+| `address` | `string` | Да | Нет | — | — |
 | `village` | `string` | Нет | Да | — | — |
 | `state` | `string` | Нет | Да | — | — |
 | `county` | `string` | Нет | Да | — | — |
@@ -1849,13 +2018,13 @@ Bid statuses
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `isLoadPoint` | `boolean` | Да | Нет | — | Признак точки погрузки. Если false — точка выгрузки. |
-| `planEnterDate` | `date-time` | Нет | Да | — | Плановая локальная дата прибытия. |
+| `planEnterDate` | `date-time` | Да | Нет | — | Плановая локальная дата прибытия. |
 | `planLeaveDate` | `date-time` | Нет | Да | — | Плановая локальная дата выезда. |
 | `secondaryPlanEnterDate` | `date-time` | Нет | Да | — | Вторая граница диапазона плановой даты прибытия. |
-| `externalId` | `string` | Нет | Да | — | Идентификатор точки на партнёрскому сервису. |
+| `externalId` | `string` | Нет | Да | max length: `72` | Идентификатор точки в партнёрском сервисе. |
 | `client` | `string` | Нет | Да | — | Клиент. |
-| `comment` | `string` | Нет | Да | — | Комментарий. |
-| `geozone` | `IntegrationBidPointAddressModel` | Нет | Нет | — | Адрес и координаты точки. |
+| `comment` | `string` | Нет | Да | max length: `8092` | Комментарий. |
+| `geozone` | `IntegrationBidPointAddressModel` | Да | Нет | — | Адрес и координаты точки. |
 | `contactPerson` | `IntegrationContactPersonModel` | Нет | Нет | — | Контактное лицо. |
 
 ### `IntegrationContactPersonModel`
@@ -1876,7 +2045,7 @@ Bid statuses
 | `firstName` | `string` | Нет | Да | — | Имя. |
 | `lastName` | `string` | Нет | Да | — | Фамилия. |
 | `patronymic` | `string` | Нет | Да | — | Отчество. |
-| `phoneNumber` | `string` | Нет | Да | — | Номер телефона. |
+| `phoneNumber` | `string` | Да | Да | — | Номер телефона. |
 
 ### `IntegrationVehicleModel`
 
@@ -1884,12 +2053,12 @@ Bid statuses
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `number` | `string` | Нет | Да | — | Государственный номер. |
+| `number` | `string` | Да | Да | — | Государственный номер. |
 | `brandName` | `string` | Нет | Да | — | Марка транспортного средства. |
 
 ### `InternalEntityType`
 
-Internal entity type
+Тип внутренней сущности
 
 Схема не содержит именованных полей.
 
@@ -1901,15 +2070,7 @@ Internal entity type
 
 Схема не содержит именованных полей.
 
-### `LoadUnloadOptionModel`
-
-| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
-|---|---|---:|---:|---|---|
-| `id` | `int64` | Да | Нет | — | — |
-
 ### `MapObjectModel`
-
-Объект инфраструктуры/геозона
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
@@ -1922,10 +2083,10 @@ Internal entity type
 | `street` | `string` | Нет | Да | — | — |
 | `houseNumber` | `string` | Нет | Да | — | — |
 | `federalDistrict` | `string` | Нет | Да | — | — |
-| `radius` | `double` | Нет | Да | — | Радиус, для заявок устанавливается автоматически |
-| `type` | `MapObjectType` | Да | Нет | — | Тип точки |
-| `coordinates` | `double`[][] | Нет | Нет | min items: `3` | Координаты полигона как массив точек: [[долгота, широта], ...].  |
-| `location` | `Point` | Да | Нет | — | Локация точки |
+| `radius` | `double` | Нет | Да | — | — |
+| `type` | `MapObjectType` | Да | Нет | — | — |
+| `coordinates` | `double[][]` | Нет | Нет | min items: `3` | Координаты полигона как массив точек: [[долгота, широта], ...].  |
+| `location` | `Point` | Да | Нет | — | — |
 
 ### `MapObjectType`
 
@@ -1939,21 +2100,21 @@ Internal entity type
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `type` | `string` | Нет | Нет | — | Point |
-| `coordinates` | `double`[] | Нет | Нет | — | Координата (долгота, широта) |
+| `type` | `string` | Нет | Нет | — | Тип геометрии (`Point`). Поле возвращается сервером и не передаётся в `PointEditModel`. |
+| `coordinates` | `double[]` | Да | Нет | — | Координаты точки в формате `[долгота, широта]`, WGS 84. |
 
 ### `PointEditModel`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `coordinates` | `double`[] | Нет | Нет | min items: `2`; max items: `2` | Координаты в виде массива с двумя элементами. Пример: [долгота, широта]. |
+| `coordinates` | `double[]` | Да | Нет | min items: `2`; max items: `2` | Координаты точки в формате `[долгота, широта]`, WGS 84. |
 
 ### `PropertyNameValueJsonObject`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `propertyName` | `string` | Нет | Да | — | — |
-| `value` | `string` | Нет | Да | — | — |
+| `value` | `string` | Нет | Да | — | Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении. |
 
 ### `QueuedApiTaskAction`
 
@@ -1969,7 +2130,7 @@ Internal entity type
 
 ### `QueuedApiTaskObjectResultStatus`
 
-Task object result status
+Статус результата обработки объекта
 
 Схема не содержит именованных полей.
 
@@ -2006,7 +2167,7 @@ Queued api task status
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `fullName` | `string` | Нет | Да | — | — |
-| `bidRoles` | `string`[] | Нет | Да | — | — |
+| `bidRoles` | `string[]` | Нет | Да | — | — |
 | `isIntegrationAccount` | `boolean` | Да | Нет | — | — |
 
 ### `RelatedDocumentModel`
@@ -2067,8 +2228,17 @@ Queued api task status
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `values` | `float`[] | Нет | Да | — | Values |
-| `fixedAt` | `date-time` | Да | Нет | — | Fixed at date |
+| `values` | `float[]` | Нет | Да | — | Значения |
+| `fixedAt` | `date-time` | Да | Нет | — | Дата и время фиксации |
+
+### `TrailerListFuelTankModel`
+
+Топливный бак прицепа
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `totalVolume` | `double` | Да | Нет | — | Общий объём |
+| `fuelConsumption` | `double` | Да | Нет | — | Расход топлива |
 
 ### `TrailerListViewModel`
 
@@ -2081,22 +2251,22 @@ Queued api task status
 | `number` | `string` | Нет | Да | — | Номер. |
 | `trackerDeviceNumber` | `string` | Нет | Да | — | Номер трекера |
 | `comment` | `string` | Нет | Да | — | — |
-| `loadUnloadOptions` | `LoadUnloadOptionModel[]` | Нет | Да | — | Типы загрузки/выгрузки |
-| `isActive` | `boolean` | Да | Нет | — | Activity sign |
-| `resourceInactivityInfo` | `ResourceInactivityInfoJsonObject` | Нет | Нет | — | Activity status |
+| `loadUnloadOptions` | `IdModel[]` | Нет | Да | — | Типы загрузки/выгрузки |
+| `isActive` | `boolean` | Да | Нет | — | Признак активности |
+| `resourceInactivityInfo` | `ResourceInactivityInfoJsonObject` | Нет | Нет | — | Сведения о неактивности |
 | `transportColumn` | `IdNameModel` | Нет | Нет | — | Транспортная колонна |
-| `mechanic` | `IdNameModel` | Нет | Нет | — | Mechanic |
-| `isDeleted` | `boolean` | Да | Нет | — | Is deleted? |
+| `mechanic` | `IdNameModel` | Нет | Нет | — | Механик |
+| `isDeleted` | `boolean` | Да | Нет | — | Признак удаления |
 | `isInRefuelingSyncList` | `boolean` | Да | Нет | — | Участвует в планировании заправок? |
-| `fuelTank` | `FuelTankListViewModel` | Нет | Нет | — | Данные бака |
+| `fuelTank` | `TrailerListFuelTankModel` | Нет | Нет | — | Данные бака |
 | `lastDieselSensorValueFixedAt` | `date-time` | Нет | Да | — | Время последней фиксации ДУТ |
-| `accessPermitIds` | `int64`[] | Нет | Да | — | Допуски и разрешения |
+| `accessPermitIds` | `int64[]` | Нет | Да | — | Допуски и разрешения |
 
 ### `TraveledRouteFixedAtPartModel`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `coordinate` | `double`[] | Нет | Да | — | — |
+| `coordinate` | `double[]` | Нет | Да | min items: `2`; max items: `2` | Координата фактического маршрута в формате `[долгота, широта]`, WGS 84. |
 | `fixedAt` | `date-time` | Да | Нет | — | — |
 
 ### `TypeOptionModel`
@@ -2148,8 +2318,8 @@ Queued api task status
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `price` | `double` | Нет | Да | — | Цена |
-| `priceWithoutVatOnTop` | `double` | Нет | Да | — | Цена без НДС. Будет null, если IsVatTop = false |
-| `status` | `integer` | Да | Нет | — | Bid statuses |
+| `priceWithoutVatOnTop` | `double` | Нет | Да | — | Цена без НДС. Будет null, если isVatTop = false |
+| `status` | `BidStatus` | Да | Нет | — | — |
 | `createdAt` | `date-time` | Да | Нет | — | Дата создания заявки |
 | `externalUpdatedAt` | `date-time` | Нет | Да | — | Дата обновления из внешней системы |
 | `acceptedByDriverForwarderAt` | `date-time` | Нет | Да | — | Дата принятия водителем-экспедитором |
@@ -2183,7 +2353,7 @@ Queued api task status
 | `trailer` | `IntegrationBidDetailsModel.bid.trailer` | Нет | Нет | — | — |
 | `legalPerson` | `IntegrationBidDetailsModel.bid.legalPerson` | Нет | Нет | — | — |
 | `estimation` | `IntegrationBidDetailsModel.bid.estimation` | Нет | Нет | — | — |
-| `bidPointLoadUnloadStatus` | `integer` | Нет | Нет | — | — |
+| `bidPointLoadUnloadStatus` | `BidPointLoadUnloadStatus` | Нет | Нет | — | — |
 | `bidPoints` | `IntegrationBidDetailsModel.bid.bidPoints[]` | Нет | Да | — | Точки загрузки |
 | `cargos` | `IntegrationBidDetailsModel.bid.cargos[]` | Нет | Да | — | Грузы |
 | `typeOptions` | `IntegrationBidDetailsModel.bid.typeOptions[]` | Нет | Да | — | Дополнительные опции типов для заявки |
@@ -2198,9 +2368,9 @@ Queued api task status
 | `clientBidNumber` | `string` | Нет | Да | — | Номер заявки клиента |
 | `clientBidDate` | `date-time` | Нет | Да | — | Дата заявки клиента |
 | `paymentPeriodInDays` | `int32` | Нет | Да | — | Срок оплаты в днях |
-| `paymentPeriodType` | `integer` | Нет | Нет | — | — |
-| `invoiceTriggerType` | `integer` | Нет | Нет | — | — |
-| `sourceType` | `integer` | Да | Нет | — | — |
+| `paymentPeriodType` | `PaymentPeriodType` | Нет | Нет | — | — |
+| `invoiceTriggerType` | `InvoiceTriggerType` | Нет | Нет | — | — |
+| `sourceType` | `SourceType` | Да | Нет | — | Источник заявки в CARGO.RUN. Поле возвращается сервером; партнёр его не задаёт. |
 | `acceptedByDriverAt` | `date-time` | Нет | Да | — | Дата принятия заявки водителем |
 | `hasItemsChange` | `boolean` | Да | Нет | — | true если есть перецепка/пересменка |
 | `isDeleted` | `boolean` | Да | Нет | — | Является ли сущность удаленной? |
@@ -2208,7 +2378,7 @@ Queued api task status
 | `hasServicePoints` | `boolean` | Да | Нет | — | true если есть точки сервисных работ |
 | `isPreBid` | `boolean` | Да | Нет | — | Предзаявка |
 | `payment` | `IntegrationBidDetailsModel.bid.payment` | Нет | Нет | — | — |
-| `accessPermitIds` | `int64`[] | Нет | Да | — | Допуски и разрешения |
+| `accessPermitIds` | `int64[]` | Нет | Да | — | Допуски и разрешения |
 
 ### `IntegrationBidDetailsModel.plannedRoute`
 
@@ -2228,7 +2398,7 @@ Queued api task status
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `type` | `integer` | Да | Нет | — | — |
+| `type` | `IntegrationBidEventType` | Да | Нет | — | — |
 | `fixedAt` | `date-time` | Да | Нет | — | Дата события. |
 | `bidPointId` | `int64` | Нет | Да | — | Идентификатор точки заявки, если событие относится к точке. |
 | `bidPointOrder` | `int32` | Нет | Да | — | Порядок точки в маршруте. |
@@ -2266,15 +2436,15 @@ Queued api task status
 | `trackerDeviceNumber` | `string` | Нет | Да | — | Номер трекера |
 | `comment` | `string` | Нет | Да | — | — |
 | `loadUnloadOptions` | `IntegrationBidDetailsModel.bid.trailer.loadUnloadOptions[]` | Нет | Да | — | Типы загрузки/выгрузки |
-| `isActive` | `boolean` | Да | Нет | — | Activity sign |
+| `isActive` | `boolean` | Да | Нет | — | Признак активности |
 | `resourceInactivityInfo` | `IntegrationBidDetailsModel.bid.trailer.resourceInactivityInfo` | Нет | Нет | — | — |
 | `transportColumn` | `IntegrationBidDetailsModel.bid.trailer.transportColumn` | Нет | Нет | — | — |
 | `mechanic` | `IntegrationBidDetailsModel.bid.trailer.mechanic` | Нет | Нет | — | — |
-| `isDeleted` | `boolean` | Да | Нет | — | Is deleted? |
+| `isDeleted` | `boolean` | Да | Нет | — | Признак удаления |
 | `isInRefuelingSyncList` | `boolean` | Да | Нет | — | Участвует в планировании заправок? |
-| `fuelTank` | `IntegrationBidDetailsModel.bid.trailer.fuelTank` | Нет | Нет | — | — |
+| `fuelTank` | `IntegrationBidDetailsModel.bid.trailer.fuelTank` | Нет | Нет | — | Топливный бак прицепа |
 | `lastDieselSensorValueFixedAt` | `date-time` | Нет | Да | — | Время последней фиксации ДУТ |
-| `accessPermitIds` | `int64`[] | Нет | Да | — | Допуски и разрешения |
+| `accessPermitIds` | `int64[]` | Нет | Да | — | Допуски и разрешения |
 
 ### `IntegrationBidDetailsModel.bid.legalPerson`
 
@@ -2287,18 +2457,18 @@ Queued api task status
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `estimatedDate` | `date-time` | Нет | Да | — | Расчетная дата вьезда |
+| `estimatedDate` | `date-time` | Нет | Да | — | Расчётная дата въезда |
 | `manualEstimatedLeaveDate` | `date-time` | Нет | Да | — | Ручная дата выезда из точки |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints`
 
-Bid point model for a view
+Точка маршрута
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `order` | `int32` | Да | Нет | — | Порядок точки |
-| `type` | `integer` | Да | Нет | — | — |
+| `type` | `BidPointType` | Да | Нет | — | — |
 | `counterpartyPointId` | `int64` | Нет | Да | — | — |
 | `customPointTypeId` | `int64` | Нет | Да | — | — |
 | `enteredAt` | `date-time` | Нет | Да | — | Дата въезда в геозону от водителя |
@@ -2325,7 +2495,7 @@ Bid point model for a view
 | `secondaryPlanEnterDateOffset` | `date-time` | Нет | Да | — | Вторая плановая дата загрузки/выгрузки, вычисленная по плановой локальной дате, учитывая часовой пояс точки. |
 | `planLeaveDate` | `date-time` | Нет | Да | — | Плановая дата выезда |
 | `createdById` | `int64` | Да | Нет | — | — |
-| `geozone` | `IntegrationBidDetailsModel.bid.bidPoints.geozone` | Нет | Нет | — | Объект инфраструктуры/геозона |
+| `geozone` | `IntegrationBidDetailsModel.bid.bidPoints.geozone` | Нет | Нет | — | — |
 | `contactPerson` | `IntegrationBidDetailsModel.bid.bidPoints.contactPerson` | Нет | Нет | — | Контактное лицо |
 | `counterparty` | `IntegrationBidDetailsModel.bid.bidPoints.counterparty` | Нет | Нет | — | — |
 | `loadOptions` | `IntegrationBidDetailsModel.bid.bidPoints.loadOptions[]` | Нет | Да | — | Типы загрузок/выгрузок на точке |
@@ -2338,9 +2508,9 @@ Bid point model for a view
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
-| `name` | `string` | Да | Да | — | Наименование |
+| `name` | `string` | Да | Нет | — | Наименование |
 | `weight` | `double` | Нет | Да | — | Вес |
-| `volume` | `double` | Нет | Да | — | Обьем |
+| `volume` | `double` | Нет | Да | — | Объём |
 | `length` | `double` | Нет | Да | — | Длина |
 | `height` | `double` | Нет | Да | — | Высота |
 | `width` | `double` | Нет | Да | — | Ширина |
@@ -2352,7 +2522,7 @@ Bid point model for a view
 | `unloadingTypeId` | `int64` | Нет | Да | — | Идентификатор типа Тип выгрузки |
 | `packType` | `string` | Нет | Да | — | Тип упаковки |
 | `placesCount` | `int16` | Нет | Да | — | Количество грузовых мест |
-| `unitOfMeasure` | `integer` | Нет | Нет | — | — |
+| `unitOfMeasure` | `UnitOfMeasure` | Нет | Нет | — | — |
 | `extendedProperties` | `IntegrationBidDetailsModel.bid.cargos.extendedProperties[]` | Нет | Да | — | Дополнительные поля груза заявки |
 | `typeOptions` | `IntegrationBidDetailsModel.bid.cargos.typeOptions[]` | Нет | Да | — | Дополнительные опции типов для груза |
 
@@ -2374,8 +2544,8 @@ Bid point model for a view
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `values` | `float`[] | Нет | Да | — | Values |
-| `fixedAt` | `date-time` | Да | Нет | — | Fixed at date |
+| `values` | `float[]` | Нет | Да | — | Значения |
+| `fixedAt` | `date-time` | Да | Нет | — | Дата и время фиксации |
 
 ### `IntegrationBidDetailsModel.bid.documents`
 
@@ -2390,19 +2560,19 @@ Bid point model for a view
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `propertyName` | `string` | Нет | Да | — | — |
-| `value` | `string` | Нет | Да | — | — |
+| `value` | `string` | Нет | Да | — | Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении. |
 
 ### `IntegrationBidDetailsModel.bid.payment`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `documentsTrackingStatus` | `integer` | Нет | Нет | — | — |
+| `documentsTrackingStatus` | `DocumentsTrackingStatus` | Нет | Нет | — | — |
 | `plannedArrivalDate` | `date` | Нет | Да | — | — |
 | `documentsReceiptDate` | `date` | Нет | Да | — | — |
 | `invoiceDate` | `date` | Нет | Да | — | — |
 | `planPaymentDate` | `date` | Нет | Да | — | — |
 | `factPaymentDate` | `date` | Нет | Да | — | — |
-| `paymentStatus` | `integer` | Да | Нет | — | — |
+| `paymentStatus` | `BidPaymentStatus` | Да | Нет | — | — |
 | `isPaymentOverdue` | `boolean` | Да | Нет | — | — |
 | `remainingPayment` | `double` | Нет | Да | — | — |
 | `comment` | `string` | Нет | Да | — | — |
@@ -2412,15 +2582,15 @@ Bid point model for a view
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `avoidTollRoadFlags` | `any` | Да | Нет | — | Опции избегания платных дорог |
-| `avoidSpecialRoadFlags` | `any` | Да | Нет | — | Опции избегания особых дорог |
+| `avoidTollRoadFlags` | `AvoidTollRoadFlags` | Да | Нет | — | — |
+| `avoidSpecialRoadFlags` | `AvoidSpecialRoadFlags` | Да | Нет | — | — |
 | `disallowToll` | `boolean` | Да | Нет | — | — |
 | `disallowTollExceptM4` | `boolean` | Да | Нет | — | — |
 | `disallowTollExceptM12DRT` | `boolean` | Да | Нет | — | — |
 | `allowFerry` | `boolean` | Да | Нет | — | — |
 | `calcTolls` | `boolean` | Да | Нет | — | — |
-| `country` | `integer` | Нет | Нет | — | — |
-| `routerProfile` | `integer` | Нет | Нет | — | — |
+| `country` | `RouterCountryType` | Нет | Нет | — | — |
+| `routerProfile` | `RouterProfile` | Нет | Нет | — | — |
 | `useSpecialProfileForEmptyRoute` | `boolean` | Да | Нет | — | — |
 
 ### `IntegrationBidDetailsModel.driverMessages.files`
@@ -2463,16 +2633,18 @@ Bid point model for a view
 
 ### `IntegrationBidDetailsModel.bid.trailer.fuelTank`
 
+Топливный бак прицепа
+
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `totalVolume` | `double` | Да | Нет | — | Объем бака |
+| `totalVolume` | `double` | Да | Нет | — | Общий объём |
 | `fuelConsumption` | `double` | Да | Нет | — | Расход топлива |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.axisLoadAfterLeaving`
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `averageValue` | `double` | Нет | Да | — | Average value (optional) |
+| `averageValue` | `double` | Нет | Да | — | Среднее значение |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.servicePoint`
 
@@ -2487,8 +2659,6 @@ Bid point model for a view
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.geozone`
 
-Объект инфраструктуры/геозона
-
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
@@ -2500,9 +2670,9 @@ Bid point model for a view
 | `street` | `string` | Нет | Да | — | — |
 | `houseNumber` | `string` | Нет | Да | — | — |
 | `federalDistrict` | `string` | Нет | Да | — | — |
-| `radius` | `double` | Нет | Да | — | Радиус, для заявок устанавливается автоматически |
-| `type` | `integer` | Да | Нет | — | — |
-| `coordinates` | `double`[][] | Нет | Нет | min items: `3` | Координаты полигона как массив точек: [[долгота, широта], ...].  |
+| `radius` | `double` | Нет | Да | — | — |
+| `type` | `MapObjectType` | Да | Нет | — | — |
+| `coordinates` | `double[][]` | Нет | Нет | min items: `3` | Координаты полигона как массив точек: [[долгота, широта], ...].  |
 | `location` | `IntegrationBidDetailsModel.bid.bidPoints.geozone.location` | Да | Нет | — | — |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.contactPerson`
@@ -2521,7 +2691,7 @@ Bid point model for a view
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | — |
 | `name` | `string` | Нет | Да | — | — |
-| `insolvencyRegistryEntry` | `IntegrationBidDetailsModel.bid.bidPoints.counterparty.insolvencyRegistryEntry` | Нет | Нет | — | — |
+| `insolvencyRegistryEntry` | `IntegrationBidDetailsModel.bid.bidPoints.counterparty.insolvencyRegistryEntry` | Нет | Нет | — | Запись реестра недобросовестных контрагентов |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.loadOptions`
 
@@ -2541,7 +2711,7 @@ Bid point model for a view
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `propertyName` | `string` | Нет | Да | — | — |
-| `value` | `string` | Нет | Да | — | — |
+| `value` | `string` | Нет | Да | — | Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении. |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.customPointType`
 
@@ -2557,7 +2727,7 @@ Bid point model for a view
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `propertyName` | `string` | Нет | Да | — | — |
-| `value` | `string` | Нет | Да | — | — |
+| `value` | `string` | Нет | Да | — | Строковое значение дополнительного поля. Числа, даты и boolean передаются в строковом представлении. |
 
 ### `IntegrationBidDetailsModel.bid.cargos.typeOptions`
 
@@ -2570,19 +2740,23 @@ Bid point model for a view
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `type` | `string` | Нет | Нет | — | Point |
-| `coordinates` | `double`[] | Нет | Нет | — | Координата (долгота, широта) |
+| `type` | `string` | Нет | Нет | — | Тип геометрии (`Point`). Поле возвращается сервером. |
+| `coordinates` | `double[]` | Нет | Нет | — | Координата (долгота, широта) |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.counterparty.insolvencyRegistryEntry`
+
+Запись реестра недобросовестных контрагентов
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `inn` | `string` | Нет | Да | — | — |
 | `ratings` | `IntegrationBidDetailsModel.bid.bidPoints.counterparty.insolvencyRegistryEntry.ratings[]` | Нет | Да | — | — |
 | `insolvencyRank` | `int32` | Да | Нет | — | — |
-| `comments` | `string`[] | Нет | Да | — | — |
+| `comments` | `string[]` | Нет | Да | — | — |
 
 ### `IntegrationBidDetailsModel.bid.bidPoints.counterparty.insolvencyRegistryEntry.ratings`
+
+Оценка контрагента в реестре
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
@@ -2593,6 +2767,8 @@ Bid point model for a view
 
 # Возможные значения полей
 
+Все enum в запросах, синхронных ответах, результатах очереди и webhook передаются в JSON строковыми именами, указанными в колонке `JSON`. Числовые коды приведены только как справочная информация и не являются wire-форматом API.
+
 ## `BidStatus`
 
 | JSON | Код в реализации | Значение |
@@ -2602,6 +2778,19 @@ Bid point model for a view
 | `Started` | 10 | Запущена в работу |
 | `Canceled` | 20 | Отменена |
 | `Done` | 30 | Выполнена |
+
+### Жизненный цикл заявки
+
+Для заявки, успешно созданной через `Bids/Apply`, основной наблюдаемый путь выглядит так:
+
+```text
+Started → Done
+   └──→ Canceled
+```
+
+`New` означает черновик, `Planned` — запланированную заявку до запуска, `Started` — заявку в работе, `Done` — завершённую, `Canceled` — отменённую. Метод `Bids/Apply` после успешного создания запускает заявку в работу, поэтому партнёр обычно получает `Started`. CARGO.RUN может вернуть заявку в работу, поэтому обработчик партнёра не должен считать статусы монотонными. Диаграмма описывает партнёрский сценарий, а не полный перечень разрешённых переходов пользовательского интерфейса CARGO.RUN.
+
+Текущий статус всегда определяется по полю `status` карточки или краткой модели заявки. Изменение статуса также может поступить через `entity.changed`.
 
 ## `IntegrationBidEventType`
 
@@ -2614,6 +2803,10 @@ Bid point model for a view
 | `LoadUnloadedByDriver` | 5 | Водитель отметил погрузку/выгрузку и выезд |
 | `DocumentsReceivedByDriver` | 6 | Водитель подтвердил получение документов |
 | `BidCompleted` | 7 | Заявка завершена |
+| `BidCanceled` | 8 | Заявка отменена |
+| `BidDeleted` | 9 | Заявка удалена |
+
+`IntegrationBidEventType` описывает этапы исполнения, вычисленные по фактическим датам заявки и её точек, включая отмену и удаление.
 
 ## `QueuedApiTaskAction`
 
@@ -2667,6 +2860,19 @@ Bid point model for a view
 | `Error` | 2 | Ошибка конкретного объекта |
 | `VersionMismatch` | 3 | Версия не совпала; в партнёрском сценарии обычно не используется |
 
+## Значения ошибок в разных enum
+
+Одинаковое имя `Error` относится к разным уровням обработки:
+
+| Поле | Enum | Что означает `Error` |
+|---|---|---|
+| `QueuedApiTaskGetResultsModel.status` | `QueuedApiTaskStatus` | Системная ошибка задачи целиком; результат мог не быть сформирован |
+| `objects[].status` | `QueuedApiTaskObjectResultStatus` | Ошибка обработки конкретного объекта; остальные объекты задачи могут быть успешны |
+| `callbackStatus` | `QueuedApiTaskCallbackStatus` | Все предусмотренные попытки доставки webhook для задачи завершились ошибкой |
+| `QueuedApiTaskObjectStatusJson.type` | `QueuedApiTaskSyncStatus` | Диагностический уровень статуса синхронизации объекта |
+
+Проверяйте эти поля независимо. Например, задача может иметь `status=Completed`, один объект — `status=Error`, а webhook — `callbackStatus=Delivered`.
+
 ## `QueuedApiTaskModelType`
 
 | JSON | Код | Доступность партнёру |
@@ -2688,7 +2894,7 @@ Bid point model for a view
 
 ## `SourceType`
 
-Поле является служебным. Для партнёрской очереди сервер устанавливает `ExternalIntegration` автоматически; передавать `sourceType` не нужно.
+Поле является выходным признаком источника заявки. Партнёр не передаёт `sourceType` при `Bids/Apply` и в документированных командах очереди. Для заявки, созданной партнёрской интеграцией, CARGO.RUN устанавливает `ExternalIntegration`; у связанной заявки, созданной перевозчиком, может вернуться другой источник.
 
 | JSON | Код |
 |---|---:|
@@ -2757,45 +2963,47 @@ Bid point model for a view
 
 ### `BidPointLoadUnloadStatus`
 
-| JSON | Код |
-|---|---:|
-| `AtLoading` | 0 |
-| `Loaded` | 10 |
-| `AtUnloading` | 20 |
-| `Unloaded` | 30 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `AtLoading` | 0 | Автомобиль находится на погрузке |
+| `Loaded` | 10 | Погрузка завершена |
+| `AtUnloading` | 20 | Автомобиль находится на выгрузке |
+| `Unloaded` | 30 | Выгрузка завершена |
 
 ### `BidPaymentStatus`
 
-| JSON | Код |
-|---|---:|
-| `NotPaid` | 0 |
-| `Paid` | 1 |
-| `PartiallyPaid` | 2 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `NotPaid` | 0 | Не оплачено |
+| `Paid` | 1 | Оплачено полностью |
+| `PartiallyPaid` | 2 | Оплачено частично |
 
 ### `DocumentsTrackingStatus`
 
-| JSON | Код |
-|---|---:|
-| `NotShipped` | 0 |
-| `InTransit` | 10 |
-| `Delivered` | 20 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `NotShipped` | 0 | Документы не отправлены |
+| `InTransit` | 10 | Документы в пути |
+| `Delivered` | 20 | Документы доставлены |
 
 ### `InvoiceTriggerType`
 
-| JSON | Код |
-|---|---:|
-| `ByOriginal` | 1 |
-| `ByScan` | 2 |
-| `AtUnloading` | 3 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `ByOriginal` | 1 | Счёт выставляется после получения оригиналов |
+| `ByScan` | 2 | Счёт выставляется по скан-копиям |
+| `AtUnloading` | 3 | Счёт выставляется после выгрузки |
 
 ### `PaymentPeriodType`
 
-| JSON | Код |
-|---|---:|
-| `InCalendarDays` | 1 |
-| `InBankingDays` | 2 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `InCalendarDays` | 1 | Срок в календарных днях |
+| `InBankingDays` | 2 | Срок в банковских днях |
 
 ### `MapObjectType`
+
+Классификация возвращаемых объектов карты и геозон. В текущем сценарии создания заявки партнёр передаёт адрес и точечные координаты, но не задаёт `MapObjectType`.
 
 | JSON | Код |
 |---|---:|
@@ -2816,49 +3024,64 @@ Bid point model for a view
 
 ### `RouterCountryType`
 
-| JSON | Код |
-|---|---:|
-| `Russia` | 1 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `Russia` | 1 | Россия; поле относится к параметрам рассчитанного маршрута |
 
 ### `RouterProfile`
 
-| JSON | Код |
-|---|---:|
-| `HgvOptimal` | 1 |
-| `HgvShortest` | 2 |
-| `Hgv15tOptimal` | 3 |
-| `Lcv` | 4 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `HgvOptimal` | 1 | Оптимальный маршрут для грузового автомобиля |
+| `HgvShortest` | 2 | Кратчайший маршрут для грузового автомобиля |
+| `Hgv15tOptimal` | 3 | Оптимальный маршрут для грузового автомобиля массой до 15 тонн |
+| `Lcv` | 4 | Маршрут для лёгкого коммерческого транспорта |
 
 ### `QueuedApiTaskSyncStatus`
 
-| JSON | Код |
-|---|---:|
-| `Info` | 0 |
-| `Warn` | 1 |
-| `Error` | 2 |
+| JSON | Код | Значение |
+|---|---:|---|
+| `Info` | 0 | Информационное сообщение, действий не требуется |
+| `Warn` | 1 | Предупреждение: обработка продолжена, сообщение следует записать в журнал |
+| `Error` | 2 | Ошибка синхронизации объекта |
 
 ### `UserMessageFlag`
 
-Флаговое поле: `None=0`, `Mentioned=1`.
+В JSON поле передаётся строковым именем. В текущем партнёрском сценарии используются `None` и `Mentioned`; числовые комбинации партнёру формировать не требуется.
 
 ### `UnitOfMeasure`
 
-| JSON | Код | JSON | Код |
-|---|---:|---|---:|
-| `None` | 0 | `Piece` | 796 |
-| `Kilogram` | 166 | `Gram` | 163 |
-| `Tonne` | 168 | `Litre` | 112 |
-| `Millilitre` | 111 | `Meter` | 6 |
-| `Centimeter` | 4 | `Millimeter` | 3 |
-| `LinearMeter` | 18 | `SquareMeter` | 55 |
-| `CubicMeter` | 113 | `Package` | 778 |
-| `Box` | 8751 | `Bottle` | 868 |
-| `Can` | 881 | `Pack` | 728 |
-| `Set` | 839 | `Pair` | 715 |
-| `Hour` | 356 | `Minute` | 355 |
-| `Day` | 359 | `Month` | 362 |
-| `Year` | 366 | `ConditionalUnit` | 876 |
-| `HorsePower` | 251 | — | — |
+В JSON передаётся строковое имя из первой колонки. Числовой классификационный код приведён только для справки.
+
+| JSON | Классификационный код |
+|---|---:|
+| `None` | 0 |
+| `Piece` | 796 |
+| `Kilogram` | 166 |
+| `Gram` | 163 |
+| `Tonne` | 168 |
+| `Litre` | 112 |
+| `Millilitre` | 111 |
+| `Meter` | 6 |
+| `Centimeter` | 4 |
+| `Millimeter` | 3 |
+| `LinearMeter` | 18 |
+| `SquareMeter` | 55 |
+| `CubicMeter` | 113 |
+| `Package` | 778 |
+| `Box` | 8751 |
+| `Bottle` | 868 |
+| `Can` | 881 |
+| `Pack` | 728 |
+| `Set` | 839 |
+| `Pair` | 715 |
+| `Hour` | 356 |
+| `Minute` | 355 |
+| `Day` | 359 |
+| `Month` | 362 |
+| `Year` | 366 |
+| `ConditionalUnit` | 876 |
+| `HorsePower` | 251 |
 
 ---
 
@@ -2872,23 +3095,34 @@ Source: products/partner-integrations/reference/errors-and-limits.md
 |---:|---|---|
 | `400` | Неверные поля или бизнес-правило | Только после исправления |
 | `401` | Недействительный или истёкший токен | Один раз обновить токен |
-| `403` | Нет доступа | Только после изменения прав |
+| `403` | Нет доступа к операции или организации | Только после изменения прав |
 | `429` | Слишком частые запросы | После `Retry-After` или паузы |
 | `5xx` | Временная серверная ошибка | Ограниченно, с exponential backoff и jitter |
 
 Синхронные бизнес-ошибки могут возвращаться как `text/plain`.
 
+Иллюстративный пример ошибки валидации; конкретный текст зависит от нарушенного правила:
+
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: text/plain; charset=utf-8
+
+Для заявки необходимо указать не менее двух точек маршрута.
+```
+
+Если заявка существует, но недоступна текущему интеграционному клиенту, методы чтения возвращают `400 Bad Request`. Не повторяйте такой запрос до изменения прав доступа.
+
 ## Ошибки очереди
 
-Проверяйте независимо:
+| Уровень | Поле | Успех | Ошибка | Где читать причину |
+|---|---|---|---|---|
+| Постановка команды | `commands[].status` | `Success` | `Failed` | `commands[].message` |
+| Задача целиком | `QueuedApiTaskGetResultsModel.status` | `Completed` | `Error` | `message` |
+| Объект задачи | `objects[].status` | `Success` | `Error` или `VersionMismatch` | `objects[].message` |
+| Доставка webhook | `callbackStatus` | `Delivered` | `Error` | `lastError` |
+| Диагностика синхронизации | `QueuedApiTaskObjectStatusJson.type` | `Info` | `Warn` или `Error` | `QueuedApiTaskObjectStatusJson.message` |
 
-- результат постановки каждой команды;
-- `QueuedApiTaskGetResultsModel.status`;
-- `objects[].status`;
-- `objects[].message`;
-- `callbackStatus` и `lastError`.
-
-`Completed` не означает, что все `objects[]` успешны.
+Эти уровни независимы. `Completed` означает, что обработка задачи закончена, но не гарантирует успех каждого элемента `objects[]`. Аналогично, `callbackStatus=Delivered` подтверждает только доставку webhook и ничего не говорит об успешности объектов.
 
 ## Подтверждённые ограничения
 
@@ -2897,17 +3131,19 @@ Source: products/partner-integrations/reference/errors-and-limits.md
 | Получение токена | Не чаще двух запросов за 30 секунд |
 | `Idempotency-Key` | Не более 100 символов, действует 24 часа |
 | Точки заявки | Минимум 2 |
+| Состав маршрута | Хотя бы одна погрузка и одна выгрузка |
 | `planEnterDate` | Обязателен для каждой точки |
 | Порядок точек | Строгий хронологический после приведения к UTC |
-| Автомобиль и водитель | Обязательны |
+| Координаты точки | Обязательны; `[долгота, широта]`, кроме `[0, 0]` |
+| ИНН | Обязателен; 10 цифр для организации или 12 для ИП |
+| Автомобиль, водитель и груз | Обязательны |
+| Прицеп | Необязателен; если передан, обязателен номер |
 | Асинхронные типы | Только `Bid` |
 | Асинхронные действия | `Write`, `Read`, `ReadQuery` |
 | Фактический маршрут | Только синхронный метод |
 | Автоматический пакет подписки | До 100 объектов в одной задаче по текущей конфигурации |
 | Список без фильтра `updatedAt` | Последние 30 дней для `ReadQuery` |
-| Ссылки на файлы | Временные, ориентировочно 20–30 минут |
-
-Максимальное число клиентских `commands[]` и `objects[]`, а также общий rate limit очереди в текущем публичном контракте не установлены. Не отправляйте неограниченные пакеты; согласуйте нагрузку с CARGO.RUN.
+| Ссылки на файлы | Временные; файл нужно скачать сразу или повторно запросить данные для новой ссылки |
 
 ## Webhook
 
@@ -2987,13 +3223,18 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "cargos": [
+                {
+                  "name": "Паллетированный груз"
+                }
+              ],
               "bidPoints": [
                 {
                   "isLoadPoint": true,
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
                     "address": "Москва, улица Примерная, 1",
-                    "location": { "type": "Point", "coordinates": [37.6176, 55.7558] }
+                    "location": { "coordinates": [37.6176, 55.7558] }
                   }
                 },
                 {
@@ -3001,7 +3242,7 @@ Idempotency-Key: write-order-2471970-v1
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
                     "address": "Казань, улица Примерная, 2",
-                    "location": { "type": "Point", "coordinates": [49.1064, 55.7961] }
+                    "location": { "coordinates": [49.1064, 55.7961] }
                   }
                 }
               ],
@@ -3019,6 +3260,26 @@ Idempotency-Key: write-order-2471970-v1
   ]
 }
 ```
+
+Ответ постановки задачи:
+
+```json
+{
+  "latencyMsec": 25,
+  "enqueuedInMsec": 8,
+  "commands": [
+    {
+      "id": 90001,
+      "action": "Write",
+      "status": "Success",
+      "readyInMsec": 100,
+      "message": null
+    }
+  ]
+}
+```
+
+Если отдельная команда не поставлена в очередь, для неё возвращается `status="Failed"`, поле `id` отсутствует, а причина находится в `message`.
 
 ### Получить результат
 
@@ -3077,7 +3338,7 @@ Authorization: Bearer <accessToken.token>
         {
           "type": "Bid",
           "modelType": "Default",
-          "query": "$filter=updatedAt gt 2026-10-07T09:59:55Z&$orderby=updatedAt,id&$top=100"
+          "query": "$filter=updatedAt gt 2026-10-07T07:59:55Z&$orderby=updatedAt,id&$top=100"
         }
       ]
     }
