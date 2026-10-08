@@ -28,7 +28,7 @@ Webhook обеспечивает малую задержку, но не гара
 ## Пример запроса
 
 ```text
-$filter=updatedAt gt 2026-10-07T09:59:55Z&$orderby=updatedAt,id&$top=100
+$filter=updatedAt gt 2026-10-07T07:59:55Z&$orderby=updatedAt,id&$top=100
 ```
 
 ## Периодическая сверка

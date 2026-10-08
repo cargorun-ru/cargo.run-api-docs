@@ -42,7 +42,7 @@ Content-Type: application/json
 }
 ```
 
-`expiresIn` задаётся в секундах. Переиспользованные поля `refreshToken`, `currentUser` и `requiresTwoFactor` при M2M-авторизации не заполняются и не должны использоваться.
+`expiresIn` задаётся в секундах. Поля пользовательской авторизации `refreshToken`, `twoFactorToken`, `twoFactorProvider`, `currentUser` и `requiresTwoFactor` не входят в публичный M2M-контракт и не должны использоваться.
 
 ## Использование токена
 
@@ -57,8 +57,6 @@ Authorization: Bearer <accessToken.token>
 ```http
 Content-Type: application/json
 ```
-
-Для `/api/integrations/Tasks/*` заголовок `X-Organization-Id` не нужен: задача не привязана к одной организации, а доступ проверяется отдельно для каждого объекта.
 
 ## Обновление токена
 

@@ -25,7 +25,7 @@
 Для инкрементальной синхронизации используйте стабильную сортировку:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 ```
 
 ## Форматы
@@ -33,11 +33,14 @@ GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-
 | Данные | Формат |
 |---|---|
 | Ответные дата и время | ISO 8601 с UTC-смещением |
+| Дата без времени | `YYYY-MM-DD`, без часового пояса |
 | Плановые даты точек | Локальное время координат точки без UTC-смещения |
-| Координаты | `[longitude, latitude]` |
+| Координаты | `[longitude, latitude]`, WGS 84, градусы |
 | Расстояние | Метры |
 | Продолжительность | Секунды |
 | Enum | Строковое имя значения |
+
+`updatedAt` представляет абсолютный момент времени. В OData-фильтрах рекомендуется приводить курсор к UTC и передавать его с суффиксом `Z`; значение со смещением и эквивалентное значение в UTC сравниваются одинаково.
 
 ## Ошибки
 

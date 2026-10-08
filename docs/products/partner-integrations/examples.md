@@ -53,13 +53,18 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "cargos": [
+                {
+                  "name": "Паллетированный груз"
+                }
+              ],
               "bidPoints": [
                 {
                   "isLoadPoint": true,
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
                     "address": "Москва, улица Примерная, 1",
-                    "location": { "type": "Point", "coordinates": [37.6176, 55.7558] }
+                    "location": { "coordinates": [37.6176, 55.7558] }
                   }
                 },
                 {
@@ -67,7 +72,7 @@ Idempotency-Key: write-order-2471970-v1
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
                     "address": "Казань, улица Примерная, 2",
-                    "location": { "type": "Point", "coordinates": [49.1064, 55.7961] }
+                    "location": { "coordinates": [49.1064, 55.7961] }
                   }
                 }
               ],
@@ -85,6 +90,26 @@ Idempotency-Key: write-order-2471970-v1
   ]
 }
 ```
+
+Ответ постановки задачи:
+
+```json
+{
+  "latencyMsec": 25,
+  "enqueuedInMsec": 8,
+  "commands": [
+    {
+      "id": 90001,
+      "action": "Write",
+      "status": "Success",
+      "readyInMsec": 100,
+      "message": null
+    }
+  ]
+}
+```
+
+Если отдельная команда не поставлена в очередь, для неё возвращается `status="Failed"`, поле `id` отсутствует, а причина находится в `message`.
 
 ### Получить результат
 
@@ -143,7 +168,7 @@ Authorization: Bearer <accessToken.token>
         {
           "type": "Bid",
           "modelType": "Default",
-          "query": "$filter=updatedAt gt 2026-10-07T09:59:55Z&$orderby=updatedAt,id&$top=100"
+          "query": "$filter=updatedAt gt 2026-10-07T07:59:55Z&$orderby=updatedAt,id&$top=100"
         }
       ]
     }

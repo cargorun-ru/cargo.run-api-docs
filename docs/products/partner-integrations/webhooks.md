@@ -39,24 +39,95 @@ HMAC_SHA256(callbackSecret, "<timestamp>.<raw-json-body>")
 
 Проверяйте подпись по исходным байтам тела до десериализации. Рекомендуется также проверять допустимое расхождение времени и использовать постоянное по времени сравнение подписей.
 
-## Тело
+## Модель тела
+
+События `queued-task.finished` и `entity.changed` используют модель [`QueuedApiTaskCallbackPayload`](reference/endpoints.md#queuedapitaskcallbackpayload). Поле `origin` определяет источник задачи:
+
+| Событие | `origin` | Назначение |
+|---|---|---|
+| `queued-task.finished` | `Request` | Результат команды, которую партнёр поставил через `POST /Tasks/Queue` |
+| `entity.changed` | `Subscription` | Данные заявки, задачу чтения которой CARGO.RUN создал по подписке |
+
+### `queued-task.finished`
 
 ```json
 {
-  "eventId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "eventId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
   "taskId": 123456,
   "action": "Read",
   "status": "Completed",
-  "origin": "Subscription",
+  "origin": "Request",
   "completedAt": "2026-10-07T10:00:00Z",
   "attemptCount": 1,
   "maxAttemptCount": 3,
   "message": null,
-  "objects": []
+  "objects": [
+    {
+      "status": "Success",
+      "type": "Bid",
+      "id": 12345,
+      "key": null,
+      "version": null,
+      "query": null,
+      "body": {
+        "externalId": "ORDER-2471970",
+        "bid": {
+          "id": 12345,
+          "status": "Started"
+        }
+      },
+      "message": null
+    }
+  ]
 }
 ```
 
-`eventId` используется для дедупликации повторных доставок.
+Состав `objects[].body` определяется исходной командой: для `Read / Bid / Default` это `IntegrationBidDetailsModel`, для `Read / Bid / Summary` — `IntegrationBidListModel`.
+
+### `entity.changed`
+
+```json
+{
+  "eventId": "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff",
+  "taskId": 123457,
+  "action": "Read",
+  "status": "Completed",
+  "origin": "Subscription",
+  "completedAt": "2026-10-07T10:05:00Z",
+  "attemptCount": 1,
+  "maxAttemptCount": 3,
+  "message": null,
+  "objects": [
+    {
+      "status": "Success",
+      "type": "Bid",
+      "id": 12345,
+      "key": null,
+      "version": null,
+      "query": null,
+      "body": {
+        "id": 12345,
+        "externalId": "ORDER-2471970",
+        "status": "Canceled",
+        "isDeleted": false,
+        "createdAt": "2026-10-06T10:00:00+03:00",
+        "updatedAt": "2026-10-07T13:05:00+03:00"
+      },
+      "message": null
+    }
+  ]
+}
+```
+
+В примере подписка настроена с `modelType=Summary`, поэтому `objects[].body` имеет модель `IntegrationBidListModel`. При `modelType=Default` в `body` приходит `IntegrationBidDetailsModel`.
+
+`eventId` уникален для доставки и используется для дедупликации повторных webhook. `taskId` позволяет повторно получить тот же результат методом `GET /api/integrations/Tasks/Queue?id={taskId}`.
+
+`attemptCount` и `maxAttemptCount` относятся к обработке асинхронной задачи CARGO.RUN. Это не счётчики доставки webhook. Состояние доставки доступно при чтении задачи в полях `callbackStatus`, `callbackAttemptCount`, `callbackMaxAttemptCount`, `callbackNextRetryAt`, `callbackDeliveredAt` и `lastError`.
+
+### `ping`
+
+`ping` — тест доставки на тот же `callbackTarget`. Не используйте его тело как бизнес-событие и не сохраняйте как изменение заявки. Получатель проверяет timestamp и подпись так же, как для остальных webhook, после чего возвращает `2xx`.
 
 ## Подписка на заявки
 
@@ -72,6 +143,8 @@ CARGO.RUN настраивает подписку:
 ```
 
 Для партнёрских сервисов поддерживается только `Bid`.
+
+`entityType` определяет тип сущности подписки; в текущем партнёрском контракте единственное поддерживаемое значение — строка `Bid`. `modelType` определяет форму `objects[].body`: `Summary` или `Default`.
 
 ### `Summary`
 

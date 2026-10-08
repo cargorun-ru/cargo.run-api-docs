@@ -38,6 +38,7 @@ for (const file of files) {
     .replace(/--8<-- \"([^\"]+)\"/g, (_, includedFile) =>
       fs.readFileSync(includedFile.startsWith(`${docsRoot}/`) ? includedFile : path.join(docsRoot, includedFile), "utf8").trim()
     )
+    .replaceAll("&amp;", "&")
     .trim();
   output.push("---", "", `Source: products/partner-integrations/${file}`, "", content, "");
 }

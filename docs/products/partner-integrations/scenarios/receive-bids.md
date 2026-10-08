@@ -15,7 +15,7 @@
 Используйте [`GET /api/integrations/Bids/GetCurrentList`](../reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist).
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt gt 2026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 Authorization: Bearer <accessToken.token>
 ```
 
@@ -35,6 +35,8 @@ Authorization: Bearer <accessToken.token>
 ```
 
 В `externalId` возвращается `ExternalPlatformOrderId`.
+
+Значение `externalId` определяется методом, которым получена запись: `GetCurrentList` возвращает идентификатор заказа, указанный перевозчиком для платформы партнёра, а `GetList` — идентификатор, который партнёр передал при создании собственной заявки.
 
 ## Асинхронный список
 
@@ -80,6 +82,7 @@ Authorization: Bearer <accessToken.token>
 
 ```http
 GET <baseUrl>/api/integrations/Bids/GetList
+Authorization: Bearer <accessToken.token>
 ```
 
 Он возвращает только заявки текущего интеграционного клиента, имеющие его `externalId`. `GetCurrentList` и `ReadQuery` предназначены для заявок, которые перевозчики транслируют платформе.
