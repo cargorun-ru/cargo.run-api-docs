@@ -1,0 +1,28 @@
+# CARGO.RUN Логистика
+
+> Машиночитаемый индекс документации для LLM и ИИ-агентов.
+
+- [index.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/): обзор и навигация.
+- [introduction.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/introduction/): назначение, архитектура и базовый URL.
+- [minimal-requirements.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/minimal-requirements/): обязательные поля.
+- [formats.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/formats/): форматы значений и ошибок.
+- [statuses.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/statuses/): статусы сущностей.
+- [glossary.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/glossary/): термины.
+- [integration/overview.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/overview/): потоки данных.
+- [integration/scenario-cr-to-external.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/scenario-cr-to-external/): получение заявок из CARGO.RUN.
+- [integration/scenario-external-to-cr.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/scenario-external-to-cr/): создание заявок из внешней системы.
+- [integration/sync.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/sync/): инкрементальная синхронизация.
+- [integration/async-sync-v2.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/async-sync-v2/): асинхронная синхронизация заявок API 2.0.
+- [integration/examples-1c.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/integration/examples-1c/): пример для 1С.
+- [api/overview.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/overview/): общие правила API.
+- [api/auth.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/auth/): получение и обновление токена.
+- [api/bids.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/bids/): заявки.
+- [api/async-tasks.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/async-tasks/): асинхронная очередь API 2.0.
+- [api/distribution-bids.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/distribution-bids/): заказы на распределение.
+- [api/counterparties.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/counterparties/): контрагенты.
+- [api/directories.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/directories/): справочники.
+- [api/custom-catalogs.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/custom-catalogs/): пользовательские справочники.
+- [api/etrn.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/etrn/): ЭТРН.
+- [api/refueling-transactions.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/refueling-transactions/): транзакции заправок.
+- [api/trackers.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/trackers/): трекеры.
+- [for-ai.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/for-ai/): правила для LLM и ИИ-агентов.
