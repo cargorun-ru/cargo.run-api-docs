@@ -77,16 +77,20 @@ nav:
       - Форматы данных: products/cargorun-logistics/formats.md
       - Статусы: products/cargorun-logistics/statuses.md
       - Глоссарий: products/cargorun-logistics/glossary.md
+      - Для LLM и ИИ-агентов: products/cargorun-logistics/for-ai.md
+      - Skill для ИИ-агентов: skills/cargorun-logistics/SKILL.md
       - Интеграция:
           - Обзор: products/cargorun-logistics/integration/overview.md
           - CARGO.RUN → учётная система: products/cargorun-logistics/integration/scenario-cr-to-external.md
           - Учётная система → CARGO.RUN: products/cargorun-logistics/integration/scenario-external-to-cr.md
           - Синхронизация данных: products/cargorun-logistics/integration/sync.md
+          - Синхронизация заявок API 2.0: products/cargorun-logistics/integration/async-sync-v2.md
           - Примеры для 1С: products/cargorun-logistics/integration/examples-1c.md
       - API:
           - Обзор API: products/cargorun-logistics/api/overview.md
           - Авторизация: products/cargorun-logistics/api/auth.md
           - Заявки: products/cargorun-logistics/api/bids.md
+          - Асинхронная очередь API 2.0: products/cargorun-logistics/api/async-tasks.md
           - Заказы: products/cargorun-logistics/api/distribution-bids.md
           - Контрагенты: products/cargorun-logistics/api/counterparties.md
           - Справочники: products/cargorun-logistics/api/directories.md
