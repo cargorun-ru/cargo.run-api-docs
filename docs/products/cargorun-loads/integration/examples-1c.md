@@ -11,15 +11,15 @@
 ### 1С создает заказы
 
 1. Пользователь создает заказ в 1С.
-2. 1С отправляет заказ в CARGO.RUN через `POST /api/Orders/Apply`.
+2. 1С отправляет заказ в CARGO.RUN через [`POST /api/Orders/Apply`](../api/orders.md#orders-apply).
 3. CARGO.RUN публикует заказ перевозчикам.
-4. 1С получает отклики через `GET /api/Orders/GetInfo`.
+4. 1С получает отклики через [`GET /api/Orders/GetInfo`](../api/orders.md#orders-get-info).
 5. После выбора перевозчика 1С получает исполнителя и дальнейшие статусы.
 
 ### CARGO.RUN создает заказы
 
 1. Пользователь создает заказ в CARGO.RUN.
-2. 1С получает новые и измененные заказы через `GET /api/Orders/GetIntegrationList`.
+2. 1С получает новые и измененные заказы через [`GET /api/Orders/GetIntegrationList`](../api/orders.md#orders-get-integration-list).
 3. 1С сохраняет ID заказа CARGO.RUN у себя.
 4. 1С периодически обновляет статус и результат выполнения.
 

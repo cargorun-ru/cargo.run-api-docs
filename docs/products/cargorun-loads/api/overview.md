@@ -47,6 +47,8 @@ Authorization: Bearer <access_token>
 
 При ошибке `400` тело ответа может содержать подробности валидации.
 
+Правила повторов и ограничения описаны в разделе [Ошибки и ограничения](./errors-and-limits.md).
+
 ---
 
 ## 4. Списки
@@ -74,6 +76,7 @@ Authorization: Bearer <access_token>
 | Раздел | Назначение |
 |---|---|
 | [Авторизация](./auth.md) | Получение и обновление токена |
+| [Ошибки и ограничения](./errors-and-limits.md) | HTTP-ошибки, повторы, списки и GPS-данные |
 | [Orders API](./orders.md) | Создание и получение заказов |
 | [Order Lifecycle API](./order-lifecycle.md) | Запуск, отмена, возврат в черновик, удаление |
 | [Order Responses API](./order-responses.md) | Отклики и выбор перевозчика |

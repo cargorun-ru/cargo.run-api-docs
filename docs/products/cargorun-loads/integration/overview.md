@@ -25,12 +25,12 @@
 
 Основные методы:
 
-- `POST /api/Orders/Apply`;
-- `GET /api/Orders/GetIntegrationList`;
-- `GET /api/Orders/GetInfo`;
-- `POST /api/OrderTruckMatchings/Accept`;
-- `POST /api/Orders/StartOrder`;
-- `POST /api/Orders/CancelOrder`.
+- [`POST /api/Orders/Apply`](../api/orders.md#orders-apply);
+- [`GET /api/Orders/GetIntegrationList`](../api/orders.md#orders-get-integration-list);
+- [`GET /api/Orders/GetInfo`](../api/orders.md#orders-get-info);
+- [`POST /api/OrderTruckMatchings/Accept`](../api/order-responses.md#order-truck-matchings-accept);
+- [`POST /api/Orders/StartOrder`](../api/order-lifecycle.md#orders-start-order);
+- `POST /api/Orders/CancelOrder` — [жизненный цикл заказа](../api/order-lifecycle.md).
 
 ### Перевозчик
 
@@ -74,6 +74,12 @@
 
 Подробно: [Интеграция перевозчика](./scenario-transporter.md)
 
+### Отслеживание перевозки экспедитором
+
+Экспедитор вручную назначает внешнего перевозчика и ТС, после чего получает фактические даты и последнюю известную GPS-позицию в своей системе.
+
+Подробно: [Отслеживание грузоперевозки экспедитором](./scenario-forwarder-tracking.md)
+
 ---
 
 ## 4. Рекомендуемая последовательность внедрения
@@ -91,6 +97,8 @@
 ## 5. Важные ограничения
 
 - Не нужно запрашивать новый access token перед каждым методом. Используйте refresh token.
-- Для polling рекомендуется не превышать 10 запросов в секунду без отдельного согласования.
+- Частоту polling и доступные лимиты согласуйте при подключении. При `429` учитывайте `Retry-After`, если он возвращен.
 - Заказы и отклики нужно сопоставлять по ID CARGO.RUN и внешним ID, если они передаются.
 - При ошибках `400` нужно сохранять тело ответа: оно содержит причину валидации или бизнес-ошибки.
+
+Подробно: [Ошибки и ограничения](../api/errors-and-limits.md).

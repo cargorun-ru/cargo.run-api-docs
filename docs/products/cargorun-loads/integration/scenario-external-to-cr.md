@@ -8,18 +8,18 @@
 
 1. Внешняя система получает токен авторизации.
 2. При необходимости получает значения справочников.
-3. Создает заказ через `POST /api/Orders/Apply`.
-4. Запускает заказ в работу через `POST /api/Orders/StartOrder`, если заказ был создан как черновик.
-5. Получает детали заказа через `GET /api/Orders/GetInfo`.
+3. Создает заказ через [`POST /api/Orders/Apply`](../api/orders.md#orders-apply).
+4. Запускает заказ в работу через [`POST /api/Orders/StartOrder`](../api/order-lifecycle.md#orders-start-order), если заказ был создан как черновик.
+5. Получает детали заказа через [`GET /api/Orders/GetInfo`](../api/orders.md#orders-get-info).
 6. Отслеживает отклики перевозчиков в `matchingCars`.
-7. Принимает выбранный отклик через `POST /api/OrderTruckMatchings/Accept`.
-8. Получает результат выполнения через `GET /api/Orders/GetInfo` или список изменений через `GET /api/Orders/GetIntegrationList`.
+7. Принимает выбранный отклик через [`POST /api/OrderTruckMatchings/Accept`](../api/order-responses.md#order-truck-matchings-accept).
+8. Получает результат выполнения через [`GET /api/Orders/GetInfo`](../api/orders.md#orders-get-info) или список изменений через [`GET /api/Orders/GetIntegrationList`](../api/orders.md#orders-get-integration-list).
 
 ---
 
 ## 2. Подготовка справочников
 
-Перед созданием заказа получите ID справочных значений, которые будут переданы в `POST /api/Orders/Apply`.
+Перед созданием заказа получите ID справочных значений, которые будут переданы в [`POST /api/Orders/Apply`](../api/orders.md#orders-apply).
 
 | Что получить | Куда передать |
 |---|---|
@@ -63,19 +63,19 @@ POST /api/Orders/Apply
 - `contactPersonName`, `contactPersonPhoneNumber` — контакт по заказу;
 - `externalId`, `externalInternalId` — идентификаторы внешней системы.
 
-Подробная модель запроса описана в разделе [Orders API](../api/orders.md). Минимальные требования описаны в разделе [Минимальные требования](../minimal-requirements.md).
+Подробная модель запроса описана в разделе [`POST /api/Orders/Apply`](../api/orders.md#orders-apply). Минимальные требования описаны в разделе [Минимальные требования](../minimal-requirements.md).
 
 После успешного создания сохраните ID заказа CARGO.RUN. Он нужен для запуска, обновления и дальнейшей синхронизации.
 
 ### Обновление заказа
 
-Для обновления заказа используйте тот же метод `POST /api/Orders/Apply`, но передайте существующий `id`.
+Для обновления заказа используйте тот же метод [`POST /api/Orders/Apply`](../api/orders.md#orders-apply), но передайте существующий `id`.
 
 Перед обновлением рекомендуется:
 
-1. Получить текущую карточку через `GET /api/Orders/GetInfo?Id={order_id}`.
+1. Получить текущую карточку через [`GET /api/Orders/GetInfo?Id={order_id}`](../api/orders.md#orders-get-info).
 2. Изменить нужные поля.
-3. Отправить обновленную модель через `POST /api/Orders/Apply`.
+3. Отправить обновленную модель через [`POST /api/Orders/Apply`](../api/orders.md#orders-apply).
 
 Часть полей может быть недоступна для изменения после запуска заказа, выбора перевозчика или завершения перевозки.
 
@@ -125,8 +125,8 @@ POST /api/OrderTruckMatchings/Accept
 
 Для обратной синхронизации внешняя система может:
 
-- получать детали конкретного заказа через `GET /api/Orders/GetInfo`;
-- получать список измененных заказов через `GET /api/Orders/GetIntegrationList` с фильтром по `updatedAt`.
+- получать детали конкретного заказа через [`GET /api/Orders/GetInfo`](../api/orders.md#orders-get-info);
+- получать список измененных заказов через [`GET /api/Orders/GetIntegrationList`](../api/orders.md#orders-get-integration-list) с фильтром по `updatedAt`.
 
 Пример:
 

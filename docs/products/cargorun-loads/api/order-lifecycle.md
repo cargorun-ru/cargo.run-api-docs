@@ -4,7 +4,7 @@
 
 ---
 
-## 1. Запуск заказа в работу
+## 1. Запуск заказа в работу {#orders-start-order}
 
 ```http
 POST /api/Orders/StartOrder?Id={order_id}
@@ -25,7 +25,7 @@ POST /api/Orders/StartOrder?Id={order_id}
 
 При успехе метод возвращает `200 OK` без тела ответа.
 
-После запуска проверьте карточку заказа через `GET /api/Orders/GetInfo?Id={order_id}`. В API заказ может иметь статус `New` (`10`) или другой статус жизненного цикла в зависимости от состояния подбора перевозчика и откликов.
+После запуска проверьте карточку заказа через [`GET /api/Orders/GetInfo?Id={order_id}`](./orders.md#orders-get-info). В API заказ может иметь статус `New` (`10`) или другой статус жизненного цикла в зависимости от состояния подбора перевозчика и откликов.
 
 ---
 
@@ -79,7 +79,7 @@ GET /api/CancellationReasons/SelectByOrderList?OrderId={order_id}
 
 При успехе метод возвращает `200 OK` без тела ответа.
 
-После отмены проверьте карточку заказа через `GET /api/Orders/GetInfo?Id={order_id}`. Ожидаемый статус отмененного заказа — `Canceled` (`50`).
+После отмены проверьте карточку заказа через [`GET /api/Orders/GetInfo?Id={order_id}`](./orders.md#orders-get-info). Ожидаемый статус отмененного заказа — `Canceled` (`50`).
 
 ---
 

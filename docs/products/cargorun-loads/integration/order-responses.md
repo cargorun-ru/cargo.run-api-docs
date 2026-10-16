@@ -86,9 +86,9 @@ POST /api/OrderTruckMatchings/Accept
 
 Если перевозчик не отправлял отклик, владелец заказа может использовать ручное назначение:
 
-- `POST /api/Orders/MatchManually`;
-- `POST /api/Orders/MatchManuallyExtended`;
-- `POST /api/Orders/MatchManuallyForCargorun`.
+- [`POST /api/Orders/MatchManually`](../api/order-responses.md#orders-match-manually);
+- [`POST /api/Orders/MatchManuallyExtended`](../api/order-responses.md#orders-match-manually-extended);
+- [`POST /api/Orders/MatchManuallyForCargorun`](../api/order-responses.md#orders-match-manually-for-cargorun).
 
 Эти методы не являются основным сценарием принятия уже созданного отклика. Их нужно использовать только в сценариях ручного назначения.
 
