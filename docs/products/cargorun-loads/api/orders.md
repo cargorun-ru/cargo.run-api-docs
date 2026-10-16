@@ -4,7 +4,7 @@
 
 ---
 
-## 1. Получение списка заказов
+## 1. Получение списка заказов {#orders-get-list}
 
 ```http
 GET /api/Orders/GetList
@@ -52,7 +52,7 @@ GET /api/Orders/GetList?$filter=contains(locationFrom,'Айдарово') and co
 
 ---
 
-## 2. Получение карточки заказа
+## 2. Получение карточки заказа {#orders-get-info}
 
 ```http
 GET /api/Orders/GetInfo?Id={order_id}
@@ -80,13 +80,26 @@ GET /api/Orders/GetInfo?Id={order_id}
 
 Метод возвращает модель `OrderInfoModel`.
 
+Для контроля исполнения используйте:
+
+| Поле | Назначение |
+|---|---|
+| `status` | Текущее состояние заказа |
+| `truckNumber` | Госномер назначенного ТС |
+| `truckCurrentLocation.latitude`, `truckCurrentLocation.longitude` | Последние известные координаты ТС |
+| `truckCurrentLocation.fixedAt` | Время фиксации координат; проверяйте его перед использованием позиции |
+| `points[].predictionEnterTimeOffset`, `points[].predictionLeaveTimeOffset` | Прогноз прибытия и убытия |
+| `points[].factEnterTimeOffset`, `points[].factLeaveTimeOffset` | Фактическое прибытие и убытие |
+
+`truckCurrentLocation` может быть `null`, например если трекер не найден, ещё не передал координаты или трансляция для заказа недоступна. Метод не возвращает отдельный универсальный журнал событий: изменения исполнения определяются по статусу заказа, данным точек и текущему положению ТС.
+
 ### Дополнительные поля полной карточки
 
 --8<-- "includes/cargorun-loads/api/orders-getinfo-fields.md"
 
 ---
 
-## 3. Создание и обновление заказа
+## 3. Создание и обновление заказа {#orders-apply}
 
 ```http
 POST /api/Orders/Apply
@@ -98,9 +111,11 @@ POST /api/Orders/Apply
 
 Минимальный набор данных для создания заказа описан в разделе [Минимальные требования](../minimal-requirements.md).
 
+`Apply` создает или обновляет заказ. Если заказ создается как черновик, отдельно вызовите [`POST /api/Orders/StartOrder`](./order-lifecycle.md#orders-start-order).
+
 ---
 
-## 4. Получение измененных заказов для интеграции
+## 4. Получение измененных заказов для интеграции {#orders-get-integration-list}
 
 ```http
 GET /api/Orders/GetIntegrationList

@@ -20,9 +20,9 @@
 
 Основные методы:
 
-- `POST /api/Orders/Apply`;
-- `GET /api/Orders/GetIntegrationList`;
-- `GET /api/Orders/GetInfo`.
+- [`POST /api/Orders/Apply`](./api/orders.md#orders-apply);
+- [`GET /api/Orders/GetIntegrationList`](./api/orders.md#orders-get-integration-list);
+- [`GET /api/Orders/GetInfo`](./api/orders.md#orders-get-info).
 
 ---
 
