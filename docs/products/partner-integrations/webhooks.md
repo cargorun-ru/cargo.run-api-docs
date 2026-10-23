@@ -121,6 +121,11 @@ HMAC_SHA256(callbackSecret, "<timestamp>.<raw-json-body>")
 
 В примере подписка настроена с `modelType=Summary`, поэтому `objects[].body` имеет модель `IntegrationBidListModel`. При `modelType=Default` в `body` приходит `IntegrationBidDetailsModel`.
 
+`Summary` в webhook предназначен для получения ID и сигнала об изменении. Не
+определяйте по нему `isCreatedByPlatform`: расширенные поля объединённого списка
+гарантированы в `GetList` и `ReadQuery`. После уведомления перечитайте список или
+полную заявку в соответствии со сценарием.
+
 `eventId` уникален для доставки и используется для дедупликации повторных webhook. `taskId` позволяет повторно получить тот же результат методом `GET /api/integrations/Tasks/Queue?id={taskId}`.
 
 `attemptCount` и `maxAttemptCount` относятся к обработке асинхронной задачи CARGO.RUN. Это не счётчики доставки webhook. Состояние доставки доступно при чтении задачи в полях `callbackStatus`, `callbackAttemptCount`, `callbackMaxAttemptCount`, `callbackNextRetryAt`, `callbackDeliveredAt` и `lastError`.

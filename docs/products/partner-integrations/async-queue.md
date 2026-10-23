@@ -21,9 +21,18 @@ POST <baseUrl>/api/integrations/Tasks/Ping
 | `Write` | `Bid` | `Default` | Создать или обновить заявку | `body` не возвращается; ID находится в `objects[].id` |
 | `Read` | `Bid` | `Default` | Получить полные данные заявки | `IntegrationBidDetailsModel` |
 | `Read` | `Bid` | `Summary` | Получить краткие данные заявки | `IntegrationBidListModel` |
-| `ReadQuery` | `Bid` | `Default` | Получить список связанных заявок | `IntegrationBidListModel[]` |
+| `ReadQuery` | `Bid` | `Default` | Получить собственные и транслируемые заявки всех доступных организаций | `IntegrationBidListModel[]` |
 
 `Delete` и `ReadConfirmation` для партнёрских сервисов не поддерживаются.
+
+`Write` использует ту же модель и валидацию, что синхронный `Bids/Apply`, включая
+`counterparty`, `vehicleType`, `temperatureRegime` и геокодирование точек без
+координат. `ReadQuery` эквивалентен `Bids/GetList` без `X-Organization-Id`.
+
+Поля `isCreatedByPlatform`, `points` и `events` гарантированы для результата
+`ReadQuery`. Прямой `Read / Bid / Summary` остаётся минимальной краткой моделью;
+не используйте его для определения источника заявки. Для этого выполните
+`ReadQuery`, а для полной карточки — `Read / Bid / Default`.
 
 ## Постановка задачи
 

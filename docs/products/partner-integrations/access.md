@@ -90,3 +90,13 @@ Content-Type: application/json
 | `ExternalPlatformOrderId` | ID заказа партнёра, указанный перевозчиком в CARGO.RUN |
 | `IntegrationBidListModel.externalId` | Для связанной заявки содержит `ExternalPlatformOrderId`; для собственной — `bid.externalId` |
 | `objects[].key` | При `Write` используется как `bid.externalId`, если поле внутри `bid` не заполнено |
+
+## Область объединённого списка
+
+Для `GET /api/integrations/Bids/GetList` заголовок `X-Organization-Id` необязателен:
+
+- с заголовком возвращаются доступные заявки только указанной организации;
+- без заголовка — заявки всех организаций интеграционного клиента.
+
+В обоих случаях список объединяет собственные и транслируемые заявки. Используйте
+`isCreatedByPlatform`, а не наличие `externalId`, чтобы определить источник.

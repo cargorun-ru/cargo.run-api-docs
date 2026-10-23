@@ -10,8 +10,7 @@
 | Проверить организацию | [`GET /api/integrations/Organizations/Check`](reference/endpoints.md#get-apiintegrationsorganizationscheck) |
 | Создать организацию или получить доступ | [`POST /api/integrations/Organizations/Apply`](reference/endpoints.md#post-apiintegrationsorganizationsapply) |
 | Создать или обновить заявку | [`POST /api/integrations/Bids/Apply`](reference/endpoints.md#post-apiintegrationsbidsapply) |
-| Получить собственные заявки | [`GET /api/integrations/Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) |
-| Получить связанные заявки перевозчиков | [`GET /api/integrations/Bids/GetCurrentList`](reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist) |
+| Получить собственные и транслируемые заявки | [`GET /api/integrations/Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) |
 | Получить карточку заявки | [`GET /api/integrations/Bids/Get`](reference/endpoints.md#get-apiintegrationsbidsget) |
 | Получить события | [`GET /api/integrations/Bids/GetEvents`](reference/endpoints.md#get-apiintegrationsbidsgetevents) |
 | Получить плановый маршрут | [`GET /api/integrations/Bids/GetPlannedRoute`](reference/endpoints.md#get-apiintegrationsbidsgetplannedroute) |
@@ -25,8 +24,11 @@
 Для инкрементальной синхронизации используйте стабильную сортировку:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 ```
+
+`X-Organization-Id` ограничивает `GetList` одной доступной организацией. Без него
+метод охватывает все организации интеграционного клиента. `GetCurrentList` удалён.
 
 ## Форматы
 

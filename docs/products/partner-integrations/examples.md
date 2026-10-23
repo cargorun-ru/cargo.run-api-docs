@@ -53,6 +53,19 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "counterparty": {
+                "name": "ООО Ромашка",
+                "inn": "7701234567"
+              },
+              "vehicleType": {
+                "name": "Рефрижератор",
+                "tonnage": 20,
+                "volume": 82
+              },
+              "temperatureRegime": {
+                "minimum": 2,
+                "maximum": 6
+              },
               "cargos": [
                 {
                   "name": "Паллетированный груз"
@@ -60,6 +73,7 @@ Idempotency-Key: write-order-2471970-v1
               ],
               "bidPoints": [
                 {
+                  "externalId": "POINT-LOAD-1",
                   "isLoadPoint": true,
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
@@ -68,11 +82,11 @@ Idempotency-Key: write-order-2471970-v1
                   }
                 },
                 {
+                  "externalId": "POINT-UNLOAD-1",
                   "isLoadPoint": false,
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
-                    "address": "Казань, улица Примерная, 2",
-                    "location": { "coordinates": [49.1064, 55.7961] }
+                    "address": "Казань, улица Примерная, 2"
                   }
                 }
               ],
