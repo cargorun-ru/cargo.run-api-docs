@@ -15,7 +15,7 @@ Source: products/partner-integrations/index.md
 - подключение и machine-to-machine авторизацию;
 - проверку организаций и управление доступом;
 - создание и обновление заявок;
-- получение заявок, связанных с партнёрским сервисом;
+- получение объединённого списка созданных партнёром и транслируемых ему заявок;
 - получение статусов, ETA, событий, маршрутов, сообщений и файлов;
 - синхронные и асинхронные способы взаимодействия;
 - подписки и webhook;
@@ -90,18 +90,22 @@ Authorization: Bearer <accessToken.token>
 
 === "Перевозчик связал заявку с партнёром"
 
-    1. Получить связанные заявки через [`Bids/GetCurrentList`](reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist) или асинхронный `ReadQuery`.
+    1. Получить объединённый список собственных и транслируемых заявок через [`Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) или асинхронный `ReadQuery`.
     2. Сохранить ID заявок CARGO.RUN.
     3. Получать полные данные синхронными методами или асинхронным `Read`.
 
-## 3. Получить связанные заявки
+## 3. Получить заявки
 
 Синхронно:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetList?$orderby=updatedAt,id&$top=100
 Authorization: Bearer <accessToken.token>
 ```
+
+Без `X-Organization-Id` метод возвращает заявки всех доступных организаций. Поле
+`isCreatedByPlatform` отличает созданные партнёром заявки от транслируемых
+перевозчиками.
 
 Асинхронно:
 
@@ -206,6 +210,11 @@ Authorization: Bearer <accessToken.token>
 ```http
 Content-Type: application/json
 ```
+
+Для `GET /api/integrations/Bids/GetList` можно передать
+`X-Organization-Id`. Заголовок ограничивает список одной доступной организацией;
+без него метод возвращает заявки всех организаций интеграционного клиента. Для
+остальных методов заголовок используйте только когда это прямо указано в контракте.
 
 ## Обновление токена
 
@@ -340,6 +349,16 @@ Content-Type: application/json
 | `IntegrationBidListModel.externalId` | Для связанной заявки содержит `ExternalPlatformOrderId`; для собственной — `bid.externalId` |
 | `objects[].key` | При `Write` используется как `bid.externalId`, если поле внутри `bid` не заполнено |
 
+## Область объединённого списка
+
+Для `GET /api/integrations/Bids/GetList` заголовок `X-Organization-Id` необязателен:
+
+- с заголовком возвращаются доступные заявки только указанной организации;
+- без заголовка — заявки всех организаций интеграционного клиента.
+
+В обоих случаях список объединяет собственные и транслируемые заявки. Используйте
+`isCreatedByPlatform`, а не наличие `externalId`, чтобы определить источник.
+
 ---
 
 Source: products/partner-integrations/scenarios/create-update-bid.md
@@ -372,6 +391,19 @@ Content-Type: application/json
   "bid": {
     "externalId": "ORDER-2471970",
     "comment": "Доставка груза",
+    "counterparty": {
+      "name": "ООО Ромашка",
+      "inn": "7701234567"
+    },
+    "vehicleType": {
+      "name": "Рефрижератор",
+      "tonnage": 20,
+      "volume": 82
+    },
+    "temperatureRegime": {
+      "minimum": 2,
+      "maximum": 6
+    },
     "cargos": [
       {
         "name": "Паллетированный груз"
@@ -379,6 +411,7 @@ Content-Type: application/json
     ],
     "bidPoints": [
       {
+        "externalId": "POINT-LOAD-1",
         "isLoadPoint": true,
         "planEnterDate": "2026-10-08T10:00:00",
         "geozone": {
@@ -389,12 +422,10 @@ Content-Type: application/json
         }
       },
       {
+        "externalId": "POINT-UNLOAD-1",
         "isLoadPoint": false,
         "planEnterDate": "2026-10-09T10:00:00",
         "geozone": {
-          "location": {
-            "coordinates": [49.1064, 55.7961]
-          },
           "address": "Казань, улица Примерная, 2"
         }
       }
@@ -446,6 +477,19 @@ Idempotency-Key: create-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "counterparty": {
+                "name": "ООО Ромашка",
+                "inn": "7701234567"
+              },
+              "vehicleType": {
+                "name": "Рефрижератор",
+                "tonnage": 20,
+                "volume": 82
+              },
+              "temperatureRegime": {
+                "minimum": 2,
+                "maximum": 6
+              },
               "cargos": [
                 {
                   "name": "Паллетированный груз"
@@ -453,6 +497,7 @@ Idempotency-Key: create-order-2471970-v1
               ],
               "bidPoints": [
                 {
+                  "externalId": "POINT-LOAD-1",
                   "isLoadPoint": true,
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
@@ -463,12 +508,10 @@ Idempotency-Key: create-order-2471970-v1
                   }
                 },
                 {
+                  "externalId": "POINT-UNLOAD-1",
                   "isLoadPoint": false,
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
-                    "location": {
-                      "coordinates": [49.1064, 55.7961]
-                    },
                     "address": "Казань, улица Примерная, 2"
                   }
                 }
@@ -502,16 +545,60 @@ Idempotency-Key: create-order-2471970-v1
 - прицеп необязателен; если он передан, `trailer.number` обязателен, а отсутствующий прицеп создаётся;
 - первый и второй водитель обрабатываются независимо.
 
+### Контрагент перевозки
+
+`counterparty` необязателен. Если он передан:
+
+1. `name` обязателен и не должен превышать 256 символов;
+2. при наличии `inn` контрагент ищется в организации по ИНН;
+3. без `inn` используется точное сравнение наименования без учёта регистра;
+4. если совпадение не найдено, создаётся новый контрагент;
+5. найденный или созданный контрагент становится заказчиком заявки.
+
+ИНН должен состоять из 10 или 12 цифр. При совпадении по ИНН уже существующий
+контрагент используется без переименования.
+
+### Тип и вместимость ТС
+
+`vehicleType` необязателен, но переданный объект должен содержать хотя бы одно из
+полей `name`, `tonnage`, `volume`. Тип и характеристики записываются в прицеп, если
+он есть в заявке, иначе — в автомобиль.
+
+- `name` — не более 128 символов;
+- `tonnage` и `volume`, если переданы, должны быть больше нуля;
+- тип создаётся в отдельном справочнике организации без дублей;
+- при тоннаже название имеет вид `Рефрижератор, 20 т`;
+- если тоннажа нет, но есть объём — `Рефрижератор, 82 м3`;
+- если переданы тоннаж и объём, в название входит тоннаж, но обе характеристики
+  записываются в ТС;
+- если `name` отсутствует, переданные тоннаж или объём обновляют характеристики,
+  не изменяя существующий тип ТС.
+
+Это изменение данных справочника автомобиля или прицепа, а не только снимка заявки.
+
+### Температурный режим
+
+`temperatureRegime` необязателен. Если объект передан, обязательны обе границы:
+
+- `minimum` и `maximum` находятся в диапазоне от −30 до 30 °C включительно;
+- `minimum` строго меньше `maximum`.
+
+Для новой организации, создаваемой партнёрским сервисом, модуль «Температурный
+режим» включается сразу. Для ранее созданной таким способом организации он
+включается при первой заявке с `temperatureRegime`.
+
 ## Требования к маршруту
 
 - минимум две точки;
 - среди точек должна быть хотя бы одна погрузка и одна выгрузка;
 - `planEnterDate` обязательно для каждой точки;
 - порядок маршрута определяется `planEnterDate`: CARGO.RUN сравнивает даты после приведения к UTC и сортирует точки по возрастанию; поле `order` во входной модели не передаётся;
-- время передаётся как локальное время координат точки без UTC-смещения;
-- часовой пояс определяется CARGO.RUN по координатам;
-- `geozone.location` и `geozone.address` обязательны;
-- координаты передаются как `[долгота, широта]`.
+- время передаётся как локальное время точки без UTC-смещения;
+- `geozone.address` — обязательная непустая строка;
+- `geozone.location` необязателен: без координат CARGO.RUN геокодирует точку по адресу;
+- переданные части адреса сохраняются, а отсутствующие заполняются результатом геокодера;
+- если координаты переданы, они имеют формат `[долгота, широта]`;
+- часовой пояс определяется CARGO.RUN по итоговым координатам.
 
 Долгота должна находиться в диапазоне от −180 до 180, широта — от −90 до 90. Пара координат `[0, 0]` не принимается.
 
@@ -537,7 +624,19 @@ Idempotency-Key: create-order-2471970-v1
 
 Для дальнейшей работы также сохраняйте внутренний `id`, возвращённый CARGO.RUN.
 
-Частичное обновление не поддерживается. Передавайте полную актуальную модель. Точки маршрута при обновлении пересоздаются.
+Частичное обновление не поддерживается. Передавайте полную актуальную модель.
+
+При повторном `Apply` CARGO.RUN старается сохранить существующие точки, их `id`,
+статусы прохождения и фактические отметки:
+
+1. точки с `externalId` сопоставляются по этому идентификатору;
+2. точки без `externalId` — по порядковому номеру после сортировки и типу
+   погрузки/выгрузки;
+3. несопоставленная точка создаётся заново.
+
+Передавайте стабильный и уникальный внутри заявки `bidPoints[].externalId`. Если
+полагаться на порядок, изменение дат или состава маршрута может привести к
+сопоставлению с другой точкой.
 
 Уникальность собственной заявки определяется сочетанием организации, интеграционного клиента, источника и `externalId`.
 
@@ -545,45 +644,111 @@ Idempotency-Key: create-order-2471970-v1
 
 Source: products/partner-integrations/scenarios/receive-bids.md
 
-# Получение связанных заявок
+# Получение заявок
 
-Перевозчик может связать заявку CARGO.RUN с заказом партнёрского сервиса. Для этого в интерфейсе CARGO.RUN он указывает:
+`GET /api/integrations/Bids/GetList` возвращает единый список:
 
-- партнёрский сервис (`ExternalPlatform`);
-- идентификатор заказа (`ExternalPlatformOrderId`).
+- заявок, созданных текущим партнёром;
+- заявок перевозчиков, транслируемых платформе партнёра.
 
-Оба значения должны быть заполнены. CARGO.RUN сопоставляет `ExternalPlatform` с платформой, настроенной у интеграционного клиента.
+Для транслируемой заявки перевозчик указывает в CARGO.RUN платформу
+`ExternalPlatform` и идентификатор заказа `ExternalPlatformOrderId`. Оба значения
+должны быть заполнены.
 
 !!! warning "Область выборки"
-    Фильтрация выполняется по платформе, а не непосредственно по `clientId`. Несколько активных интеграционных клиентов одной платформы могут получить одинаковые связанные заявки.
+    Транслируемые заявки выбираются по платформе, а не непосредственно по `clientId`.
+    Несколько активных интеграционных клиентов одной платформы могут получить
+    одинаковые заявки.
 
 ## Синхронный список
 
-Используйте [`GET /api/integrations/Bids/GetCurrentList`](../reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist).
+Все доступные организации:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 Authorization: Bearer <accessToken.token>
 ```
 
-Ответ:
+Только одна организация:
+
+```http
+GET <baseUrl>/api/integrations/Bids/GetList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+Authorization: Bearer <accessToken.token>
+X-Organization-Id: 12345
+```
+
+`X-Organization-Id` необязателен только как ограничитель области этого метода. Если
+заголовок передан, организация должна быть доступна интеграционному клиенту.
+
+!!! warning "Миграция"
+    `GET /api/integrations/Bids/GetCurrentList` удалён. Не заменяйте его вызовом
+    `GetList` вслепую: новый метод также возвращает заявки, созданные партнёром, а без
+    `X-Organization-Id` охватывает все доступные организации.
+
+## Источник и внешний идентификатор
+
+| `isCreatedByPlatform` | Источник | Значение `externalId` |
+|---:|---|---|
+| `true` | Заявку создал текущий партнёр | `bid.externalId`, переданный в `Apply` или `Write` |
+| `false` | Перевозчик транслирует заявку платформе | `ExternalPlatformOrderId`, указанный перевозчиком |
+
+Всегда сохраняйте внутренний `id` CARGO.RUN. `externalId` имеет разную семантику в
+зависимости от источника и не заменяет внутренний ID.
+
+## Пример ответа
 
 ```json
 [
   {
     "id": 12345,
     "externalId": "ORDER-2471970",
+    "isCreatedByPlatform": false,
     "status": "Started",
     "isDeleted": false,
     "createdAt": "2026-10-06T10:00:00+03:00",
-    "updatedAt": "2026-10-07T11:00:00+03:00"
+    "updatedAt": "2026-10-07T11:00:00+03:00",
+    "points": [
+      {
+        "id": 501,
+        "order": 0,
+        "externalId": "POINT-LOAD-1",
+        "type": "LoadPoint",
+        "planEnterDate": "2026-10-07T12:00:00+03:00",
+        "estimatedEnterDate": "2026-10-07T12:25:00+03:00",
+        "loadUnloadStatus": "AtLoading",
+        "enteredAt": "2026-10-07T12:18:00+03:00",
+        "loadUnloadedAt": null,
+        "documentsReceivedAt": null
+      }
+    ],
+    "events": [
+      {
+        "type": "EnteredPointByDriver",
+        "fixedAt": "2026-10-07T12:18:00+03:00",
+        "bidPointId": 501,
+        "bidPointOrder": 0,
+        "bidPointExternalId": "POINT-LOAD-1"
+      }
+    ]
   }
 ]
 ```
 
-В `externalId` возвращается `ExternalPlatformOrderId`.
+## Точки, события и часовые пояса
 
-Значение `externalId` определяется методом, которым получена запись: `GetCurrentList` возвращает идентификатор заказа, указанный перевозчиком для платформы партнёра, а `GetList` — идентификатор, который партнёр передал при создании собственной заявки.
+- `points` содержит несервисные точки в порядке следования;
+- все даты в `points` возвращаются в часовом поясе соответствующей точки;
+- события самой заявки возвращаются в часовом поясе организации;
+- события точки возвращаются в часовом поясе точки;
+- `events` внутри `GetList` содержит события несервисных точек;
+- отдельный `Bids/GetEvents` дополнительно возвращает события сервисных точек, если
+  у них есть фактические даты;
+- `events` вычисляется после основной выборки и не участвует в `$filter` и `$orderby`.
+
+`estimatedEnterDate` пересчитывается без изменения заявки и не сдвигает `updatedAt`.
+Поэтому курсорная выборка по `updatedAt` не гарантирует получение каждого изменения
+ETA. Если актуальная ETA нужна в интерфейсе, периодически перечитывайте интересующие
+заявки по ID или запрашивайте подходящее текущее окно.
 
 ## Асинхронный список
 
@@ -607,10 +772,14 @@ Authorization: Bearer <accessToken.token>
 ```
 
 После завершения задачи `objects[0].body` содержит `IntegrationBidListModel[]`.
-
-Для `ReadQuery` поля `id`, `version` и `key` должны отсутствовать, а `query` должен быть непустым.
+`ReadQuery` эквивалентен `GetList` без `X-Organization-Id` и охватывает все доступные
+организации. Поля `id`, `version` и `key` в объекте команды должны отсутствовать, а
+`query` должен быть непустым.
 
 ## Первичная загрузка и пагинация
+
+Без непустого `$filter` сервер возвращает заявки, изменённые за последние 30 дней.
+Любой непустой `$filter`, даже не связанный с `updatedAt`, отменяет это окно.
 
 1. Выберите начальное значение `updatedAt`.
 2. Запрашивайте данные с `$orderby=updatedAt,id`.
@@ -618,21 +787,7 @@ Authorization: Bearer <accessToken.token>
 4. Сохраняйте последний успешно обработанный `(updatedAt,id)`.
 5. Следующий интервал начинайте на несколько секунд раньше.
 6. Удаляйте дубли по `id`.
-
-Без явного фильтра по `updatedAt` асинхронный `ReadQuery` ограничивает результат заявками, изменёнными за последние 30 дней.
-
-## Собственные заявки партнёра
-
-Для заявок, созданных текущим партнёром, существует отдельный синхронный метод:
-
-[`GET /api/integrations/Bids/GetList`](../reference/endpoints.md#get-apiintegrationsbidsgetlist)
-
-```http
-GET <baseUrl>/api/integrations/Bids/GetList
-Authorization: Bearer <accessToken.token>
-```
-
-Он возвращает только заявки текущего интеграционного клиента, имеющие его `externalId`. `GetCurrentList` и `ReadQuery` предназначены для заявок, которые перевозчики транслируют платформе.
+7. Разделяйте источники по `isCreatedByPlatform`, если для них нужны разные процессы.
 
 ---
 
@@ -700,6 +855,11 @@ ETA находится в `bid.estimation`:
 
 `estimatedDate` возвращается в часовом поясе последней точки заявки.
 
+Объединённый `GetList` также возвращает `points[].estimatedEnterDate` в часовом поясе
+соответствующей точки. ETA пересчитывается без изменения заявки и не сдвигает
+`updatedAt`, поэтому инкрементальный курсор не гарантирует получение каждого её
+изменения. Для оперативного экрана периодически перечитывайте интересующие заявки.
+
 Фрагмент ответа `Bids/Get`:
 
 ```json
@@ -723,12 +883,16 @@ ETA находится в `bid.estimation`:
     "type": "EnteredPointByDriver",
     "fixedAt": "2026-10-08T12:00:00+03:00",
     "bidPointId": 456,
-    "bidPointOrder": 1
+    "bidPointOrder": 1,
+    "bidPointExternalId": "POINT-UNLOAD-1"
   }
 ]
 ```
 
 Для события точки `fixedAt` использует часовой пояс этой точки, для остальных событий — часовой пояс организации.
+
+`GetList.events` содержит события несервисных точек. Отдельный `Bids/GetEvents`
+дополнительно возвращает события сервисных точек, если у них есть фактические даты.
 
 ## Плановый маршрут
 
@@ -806,7 +970,9 @@ Source: products/partner-integrations/scenarios/recovery.md
 
 # Восстановление синхронизации
 
-Webhook обеспечивает малую задержку, но не гарантирует хранение всех изменений во время длительной недоступности партнёра. Для восстановления используйте `ReadQuery` или `GetCurrentList`.
+Webhook обеспечивает малую задержку, но не гарантирует хранение всех изменений во
+время длительной недоступности партнёра. Для восстановления используйте `ReadQuery`
+или объединённый `GetList`.
 
 ## Хранимое состояние
 
@@ -830,6 +996,10 @@ Webhook обеспечивает малую задержку, но не гара
 7. Для изменившихся ID выполнить `Read / Bid / Default`.
 8. Отдельно запросить фактический маршрут, если он нужен.
 9. Обновить курсор только после успешной записи всех данных.
+
+`ReadQuery` эквивалентен `GetList` без `X-Organization-Id`. Если восстановление
+нужно выполнить отдельно по организации, используйте синхронный `GetList` с этим
+заголовком.
 
 ## Пример запроса
 
@@ -863,8 +1033,7 @@ Source: products/partner-integrations/sync-api.md
 | Проверить организацию | [`GET /api/integrations/Organizations/Check`](reference/endpoints.md#get-apiintegrationsorganizationscheck) |
 | Создать организацию или получить доступ | [`POST /api/integrations/Organizations/Apply`](reference/endpoints.md#post-apiintegrationsorganizationsapply) |
 | Создать или обновить заявку | [`POST /api/integrations/Bids/Apply`](reference/endpoints.md#post-apiintegrationsbidsapply) |
-| Получить собственные заявки | [`GET /api/integrations/Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) |
-| Получить связанные заявки перевозчиков | [`GET /api/integrations/Bids/GetCurrentList`](reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist) |
+| Получить собственные и транслируемые заявки | [`GET /api/integrations/Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) |
 | Получить карточку заявки | [`GET /api/integrations/Bids/Get`](reference/endpoints.md#get-apiintegrationsbidsget) |
 | Получить события | [`GET /api/integrations/Bids/GetEvents`](reference/endpoints.md#get-apiintegrationsbidsgetevents) |
 | Получить плановый маршрут | [`GET /api/integrations/Bids/GetPlannedRoute`](reference/endpoints.md#get-apiintegrationsbidsgetplannedroute) |
@@ -878,8 +1047,11 @@ Source: products/partner-integrations/sync-api.md
 Для инкрементальной синхронизации используйте стабильную сортировку:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetList?$filter=updatedAt%20gt%202026-10-06T08:00:00Z&$orderby=updatedAt,id&$top=100
 ```
+
+`X-Organization-Id` ограничивает `GetList` одной доступной организацией. Без него
+метод охватывает все организации интеграционного клиента. `GetCurrentList` удалён.
 
 ## Форматы
 
@@ -928,9 +1100,18 @@ POST <baseUrl>/api/integrations/Tasks/Ping
 | `Write` | `Bid` | `Default` | Создать или обновить заявку | `body` не возвращается; ID находится в `objects[].id` |
 | `Read` | `Bid` | `Default` | Получить полные данные заявки | `IntegrationBidDetailsModel` |
 | `Read` | `Bid` | `Summary` | Получить краткие данные заявки | `IntegrationBidListModel` |
-| `ReadQuery` | `Bid` | `Default` | Получить список связанных заявок | `IntegrationBidListModel[]` |
+| `ReadQuery` | `Bid` | `Default` | Получить собственные и транслируемые заявки всех доступных организаций | `IntegrationBidListModel[]` |
 
 `Delete` и `ReadConfirmation` для партнёрских сервисов не поддерживаются.
+
+`Write` использует ту же модель и валидацию, что синхронный `Bids/Apply`, включая
+`counterparty`, `vehicleType`, `temperatureRegime` и геокодирование точек без
+координат. `ReadQuery` эквивалентен `Bids/GetList` без `X-Organization-Id`.
+
+Поля `isCreatedByPlatform`, `points` и `events` гарантированы для результата
+`ReadQuery`. Прямой `Read / Bid / Summary` остаётся минимальной краткой моделью;
+не используйте его для определения источника заявки. Для этого выполните
+`ReadQuery`, а для полной карточки — `Read / Bid / Default`.
 
 ## Постановка задачи
 
@@ -1141,6 +1322,11 @@ HMAC_SHA256(callbackSecret, "<timestamp>.<raw-json-body>")
 
 В примере подписка настроена с `modelType=Summary`, поэтому `objects[].body` имеет модель `IntegrationBidListModel`. При `modelType=Default` в `body` приходит `IntegrationBidDetailsModel`.
 
+`Summary` в webhook предназначен для получения ID и сигнала об изменении. Не
+определяйте по нему `isCreatedByPlatform`: расширенные поля объединённого списка
+гарантированы в `GetList` и `ReadQuery`. После уведомления перечитайте список или
+полную заявку в соответствии со сценарием.
+
 `eventId` уникален для доставки и используется для дедупликации повторных webhook. `taskId` позволяет повторно получить тот же результат методом `GET /api/integrations/Tasks/Queue?id={taskId}`.
 
 `attemptCount` и `maxAttemptCount` относятся к обработке асинхронной задачи CARGO.RUN. Это не счётчики доставки webhook. Состояние доставки доступно при чтении задачи в полях `callbackStatus`, `callbackAttemptCount`, `callbackMaxAttemptCount`, `callbackNextRetryAt`, `callbackDeliveredAt` и `lastError`.
@@ -1228,7 +1414,13 @@ $orderby=updatedAt,id
 
 Сохраняйте пару `(updatedAt, id)` последней успешно обработанной заявки. Следующий запрос выполняйте с небольшим перекрытием по времени и удаляйте дубли по `id`.
 
-Если `ReadQuery` не содержит фильтр по `updatedAt`, сервер ограничивает выборку заявками, изменёнными за последние 30 дней.
+Если `GetList` или `ReadQuery` не содержит непустого `$filter`, сервер ограничивает
+выборку заявками, изменёнными за последние 30 дней. Любой непустой `$filter`
+отменяет это окно, поэтому для синхронизации задавайте явную границу `updatedAt`.
+
+Пересчёт `points[].estimatedEnterDate` не изменяет `updatedAt`. Если партнёру нужна
+актуальная ETA, одного курсора изменений недостаточно: перечитывайте интересующие
+заявки по ID или подходящему текущему окну.
 
 ## Идемпотентность создания
 
@@ -1299,8 +1491,7 @@ Source: products/partner-integrations/reference/endpoints.md
 | `GET /api/integrations/Organizations/Check` | Проверить организацию по ИНН |
 | `POST /api/integrations/Organizations/Apply` | Создать организацию или получить доступ |
 | `POST /api/integrations/Bids/Apply` | Создать или обновить заявку |
-| `GET /api/integrations/Bids/GetList` | Получить заявки, созданные текущим партнёром |
-| `GET /api/integrations/Bids/GetCurrentList` | Получить заявки, связанные с платформой партнёра |
+| `GET /api/integrations/Bids/GetList` | Получить созданные партнёром и транслируемые ему заявки |
 | `GET /api/integrations/Bids/Get` | Получить карточку заявки |
 | `GET /api/integrations/Bids/GetEvents` | Получить события заявки |
 | `GET /api/integrations/Bids/GetPlannedRoute` | Получить плановый маршрут |
@@ -1338,13 +1529,19 @@ Source: products/partner-integrations/reference/endpoints.md
 
 Тело: [`CreateIntegrationOrganizationContext`](#createintegrationorganizationcontext).
 
-Поиск выполняется по ИНН. Без ИНН используется служебная организация. Успех: `200 OK`, модель [`OrganizationApplyResult`](#organizationapplyresult).
+Поиск выполняется по ИНН. Без ИНН используется служебная организация. Для новой
+организации, создаваемой партнёрским сервисом, сразу включается модуль
+«Температурный режим». Успех: `200 OK`, модель
+[`OrganizationApplyResult`](#organizationapplyresult).
 
 ## `POST /api/integrations/Bids/Apply`
 
 Тело: [`ApplyBidFromIntegrationContext`](#applybidfromintegrationcontext). Результат: [`ApplyBidResultModel`](#applybidresultmodel).
 
-Создаёт или полностью обновляет заявку, создаёт недостающие транспорт и водителей и запускает заявку в работу.
+Создаёт или полностью обновляет заявку, создаёт недостающие транспорт, водителей и
+контрагента, применяет характеристики ТС и температурный режим и запускает заявку в
+работу. Если координаты точки не переданы, CARGO.RUN определяет их по обязательному
+адресу.
 
 Успех: `200 OK`:
 
@@ -1359,15 +1556,34 @@ Source: products/partner-integrations/reference/endpoints.md
 
 ## `GET /api/integrations/Bids/GetList`
 
-Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel) — заявки, созданные текущим партнёром и имеющие его `externalId`.
+Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel):
+
+- заявки, созданные текущим партнёром;
+- заявки перевозчиков, транслируемые платформе партнёра.
+
+Поле `isCreatedByPlatform` различает эти виды. Для собственной заявки `externalId`
+содержит ID, переданный в `Apply`; для транслируемой — ID заказа, указанный
+перевозчиком для платформы.
+
+| Заголовок | Обязательно | Поведение |
+|---|---:|---|
+| `X-Organization-Id` | Нет | Если передан, возвращаются заявки только этой доступной организации. Без заголовка возвращаются заявки всех организаций, доступных интеграционному клиенту. |
+
+Без непустого `$filter` сервер ограничивает список заявками, изменёнными за последние
+30 дней. Любой явно переданный непустой `$filter` отменяет это окно, поэтому для
+инкрементальной синхронизации всегда указывайте границу по `updatedAt`.
+
+Сортировка по умолчанию — `updatedAt,id`. Ответ также содержит несервисные точки
+`points` и их события `events`. События вычисляются после основной выборки и не
+участвуют в `$filter` и `$orderby`.
 
 Поддерживает OData-параметры и заголовок `X-MetaCount`.
 
-## `GET /api/integrations/Bids/GetCurrentList`
-
-Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel) — заявки, которые перевозчики связали с платформой текущего интеграционного клиента. В `externalId` возвращается ID заказа партнёра.
-
-Поддерживает OData-параметры и `X-MetaCount`.
+!!! warning "Миграция с GetCurrentList"
+    `GET /api/integrations/Bids/GetCurrentList` удалён. Используйте `GetList` и
+    определяйте источник заявки по `isCreatedByPlatform`. Отсутствие
+    `X-Organization-Id` означает выборку по всем доступным организациям, а не по одной
+    текущей организации.
 
 ## `GET /api/integrations/Bids/Get`
 
@@ -1379,7 +1595,13 @@ Source: products/partner-integrations/reference/endpoints.md
 
 ## `GET /api/integrations/Bids/GetEvents`
 
-Параметр `id` — обязательный ID заявки CARGO.RUN. Успех: [`IntegrationBidEventModel[]`](#integrationbideventmodel). Значения `type`: [`IntegrationBidEventType`](#integrationbideventtype).
+Параметр `id` — обязательный ID заявки CARGO.RUN. Успех:
+[`IntegrationBidEventModel[]`](#integrationbideventmodel). Значения `type`:
+[`IntegrationBidEventType`](#integrationbideventtype).
+
+События самой заявки возвращаются в часовом поясе организации, события точек — в
+часовом поясе соответствующей точки. В отличие от `GetList.events`, отдельный метод
+включает события сервисных точек, если у них есть фактические даты.
 
 ## `GET /api/integrations/Bids/GetPlannedRoute`
 
@@ -1428,7 +1650,10 @@ Authorization: Bearer <accessToken.token>
 |---|---|---|
 | `Idempotency-Key` | До 100 символов | Возвращает те же задачи при повторе в течение 24 часов |
 
-Поддерживаются только комбинации `Write/Read/ReadQuery` для `Bid`, перечисленные в разделе [Асинхронная очередь](../async-queue.md).
+Поддерживаются только комбинации `Write/Read/ReadQuery` для `Bid`, перечисленные в
+разделе [Асинхронная очередь](../async-queue.md). `Write` использует тот же контракт,
+что `Bids/Apply`. `ReadQuery` эквивалентен `Bids/GetList` без
+`X-Organization-Id`.
 
 Успешная постановка возвращает сведения о созданных задачах и их `id`. Для каждой команды может быть `status="Success"` или `status="Failed"`.
 
@@ -1587,19 +1812,68 @@ Authorization: Bearer <accessToken.token>
 | `trailer` | `IntegrationVehicleModel` | Нет | Нет | — | Прицеп. Необязателен; если объект передан, поле `number` обязательно. |
 | `driver` | `IntegrationDriverModel` | Да | Нет | — | Водитель. |
 | `secondaryDriver` | `IntegrationDriverModel` | Нет | Нет | — | Второй водитель. |
+| `counterparty` | `IntegrationCounterpartyModel` | Нет | Нет | — | Заказчик перевозки. Если передан, `name` обязателен. Контрагент ищется в организации по ИНН, а без ИНН — по наименованию без учёта регистра; при отсутствии создаётся. |
+| `temperatureRegime` | `IntegrationTemperatureRegimeModel` | Нет | Нет | — | Температурный режим перевозки, °C. Если объект передан, обязательны обе границы. |
+| `vehicleType` | `IntegrationVehicleTypeModel` | Нет | Нет | — | Тип и вместимость ТС. Значения записываются в прицеп, а при его отсутствии — в автомобиль. |
+
+### `IntegrationCounterpartyModel`
+
+Контрагент во внешней заявке.
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `name` | `string` | Да | Нет | max length: `256` | Наименование контрагента. |
+| `inn` | `string` | Нет | Да | 10 или 12 цифр | ИНН организации или ИП. |
+
+### `IntegrationTemperatureRegimeModel`
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `minimum` | `float` | Да | Нет | от `-30` до `30` | Минимальная температура, °C; должна быть меньше `maximum`. |
+| `maximum` | `float` | Да | Нет | от `-30` до `30` | Максимальная температура, °C; должна быть больше `minimum`. |
+
+### `IntegrationVehicleTypeModel`
+
+Хотя бы одно из полей `name`, `tonnage` и `volume` должно быть заполнено.
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `name` | `string` | Нет | Да | max length: `128` | Тип ТС, например `Рефрижератор`. |
+| `tonnage` | `double` | Нет | Да | `> 0` | Грузоподъёмность, т. |
+| `volume` | `double` | Нет | Да | `> 0` | Объём кузова, м³. |
 
 ### `IntegrationBidListModel`
 
-Краткие данные заявки, созданной партнёрским сервисом.
+Краткие данные заявки, созданной партнёрским сервисом или транслируемой ему перевозчиком.
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
 | `id` | `int64` | Да | Нет | — | Идентификатор заявки Cargo.Run. |
-| `externalId` | `string` | Нет | Да | — | В `Bids/GetList` — идентификатор, переданный партнёром при создании заявки; в `Bids/GetCurrentList` — идентификатор заказа, указанный перевозчиком для платформы партнёра. |
+| `externalId` | `string` | Нет | Да | — | Для собственной заявки — идентификатор, переданный партнёром при создании; для транслируемой — идентификатор заказа, указанный перевозчиком для платформы партнёра. |
+| `isCreatedByPlatform` | `boolean` | Да | Нет | — | `true`, если заявку создал текущий партнёр; `false`, если перевозчик транслирует её платформе. |
 | `status` | `BidStatus` | Да | Нет | — | Статус заявки BidStatus |
 | `isDeleted` | `boolean` | Да | Нет | — | Заявка удалена. Данные удалённой заявки не читаются, партнёрскому сервису следует прекратить её отслеживание |
 | `createdAt` | `date-time` | Да | Нет | — | Дата создания в часовом поясе организации |
-| `updatedAt` | `date-time` | Да | Нет | — | Дата последнего изменения заявки. Для курсорной выборки используйте `$filter=updatedAt gt {курсор}&$orderby=updatedAt,id` и небольшое перекрытие интервалов. |
+| `updatedAt` | `date-time` | Да | Нет | — | Дата последнего изменения заявки. Для курсорной выборки используйте `$filter=updatedAt gt {курсор}&$orderby=updatedAt,id` и небольшое перекрытие интервалов. Пересчёт `points[].estimatedEnterDate` не изменяет это поле. |
+| `points` | `IntegrationBidListPointModel[]` | Да | Нет | — | Несервисные точки маршрута в порядке следования. Даты представлены в часовом поясе точки. |
+| `events` | `IntegrationBidEventModel[]` | Да | Нет | — | События заявки и несервисных точек. Не участвуют в `$filter` и `$orderby`. |
+
+### `IntegrationBidListPointModel`
+
+Точка маршрута в объединённом списке заявок. Сервисные точки в массив не включаются.
+
+| Поле | Тип | Обязательно | `null` | Ограничения | Описание |
+|---|---|---:|---:|---|---|
+| `id` | `int64` | Да | Нет | — | ID точки CARGO.RUN; совпадает с `bidPointId` связанного события. |
+| `order` | `int32` | Да | Нет | — | Порядок точки в маршруте. |
+| `externalId` | `string` | Нет | Да | — | Идентификатор точки в партнёрском сервисе. |
+| `type` | `BidPointType` | Да | Нет | — | Тип точки. |
+| `planEnterDate` | `date-time` | Да | Нет | — | Плановое время прибытия в часовом поясе точки. |
+| `estimatedEnterDate` | `date-time` | Нет | Да | — | Расчётное время прибытия в часовом поясе точки. Может меняться без изменения `updatedAt` заявки. |
+| `loadUnloadStatus` | `BidPointLoadUnloadStatus` | Нет | Да | — | Статус погрузки или выгрузки. |
+| `enteredAt` | `date-time` | Нет | Да | — | Время прибытия, отмеченное водителем, в часовом поясе точки. |
+| `loadUnloadedAt` | `date-time` | Нет | Да | — | Время погрузки или выгрузки, отмеченное водителем, в часовом поясе точки. |
+| `documentsReceivedAt` | `date-time` | Нет | Да | — | Время получения документов, отмеченное водителем, в часовом поясе точки. |
 
 ### `BidForExternalSyncModel`
 
@@ -1695,6 +1969,7 @@ Authorization: Bearer <accessToken.token>
 | `fixedAt` | `date-time` | Да | Нет | — | Дата события. |
 | `bidPointId` | `int64` | Нет | Да | — | Идентификатор точки заявки, если событие относится к точке. |
 | `bidPointOrder` | `int32` | Нет | Да | — | Порядок точки в маршруте. |
+| `bidPointExternalId` | `string` | Нет | Да | — | Идентификатор точки в партнёрском сервисе, если событие относится к точке. |
 
 ### `RouteSimpleModel`
 
@@ -2035,9 +2310,9 @@ Authorization: Bearer <accessToken.token>
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `location` | `PointEditModel` | Да | Нет | — | Координаты точки: [долгота, широта]. |
+| `location` | `PointEditModel` | Нет | Да | — | Координаты точки: `[долгота, широта]`. Если не переданы, CARGO.RUN определяет их по адресу. |
 | `city` | `string` | Нет | Да | — | — |
-| `address` | `string` | Да | Нет | — | — |
+| `address` | `string` | Да | Нет | Непустая строка | Адрес точки; обязателен даже при переданных координатах. |
 | `village` | `string` | Нет | Да | — | — |
 | `state` | `string` | Нет | Да | — | — |
 | `county` | `string` | Нет | Да | — | — |
@@ -3171,7 +3446,8 @@ Content-Type: text/plain; charset=utf-8
 | Состав маршрута | Хотя бы одна погрузка и одна выгрузка |
 | `planEnterDate` | Обязателен для каждой точки |
 | Порядок точек | Строгий хронологический после приведения к UTC |
-| Координаты точки | Обязательны; `[долгота, широта]`, кроме `[0, 0]` |
+| Адрес точки | Обязательная непустая строка, даже если координаты переданы |
+| Координаты точки | Необязательны; если переданы — `[долгота, широта]`, кроме `[0, 0]`; если отсутствуют — определяются по адресу |
 | ИНН | Обязателен; 10 цифр для организации или 12 для ИП |
 | Автомобиль, водитель и груз | Обязательны |
 | Прицеп | Необязателен; если передан, обязателен номер |
@@ -3179,7 +3455,7 @@ Content-Type: text/plain; charset=utf-8
 | Асинхронные действия | `Write`, `Read`, `ReadQuery` |
 | Фактический маршрут | Только синхронный метод |
 | Автоматический пакет подписки | До 100 объектов в одной задаче по текущей конфигурации |
-| Список без фильтра `updatedAt` | Последние 30 дней для `ReadQuery` |
+| Список без `$filter` | Последние 30 дней для `GetList` и `ReadQuery`; любой непустой `$filter` отменяет окно по умолчанию |
 | Ссылки на файлы | Временные; файл нужно скачать сразу или повторно запросить данные для новой ссылки |
 
 ## Webhook
@@ -3203,6 +3479,23 @@ Content-Type: text/plain; charset=utf-8
 - асинхронная работа с `Car`, `Trailer`, `Driver`, `Counterparty`, `DistributionBid`;
 - фактический маршрут внутри `IntegrationBidDetailsModel`;
 - частичное обновление заявки.
+
+## Валидация новых полей заявки
+
+| Поле | Правило | Ошибка |
+|---|---|---|
+| `counterparty.name` | Обязательно при переданном `counterparty` | `Не указано наименование контрагента.` |
+| `counterparty.name` | Не более 256 символов | `Наименование контрагента не должно превышать 256 символов.` |
+| `counterparty.inn` | Если передан — 10 или 12 цифр | `ИНН контрагента … некорректен: ожидается 10 или 12 цифр.` |
+| `vehicleType` | Хотя бы одно из `name`, `tonnage`, `volume` | `Не указаны тип ТС, тоннаж или объем.` |
+| `vehicleType.name` | Не более 128 символов | `Тип ТС не должен превышать 128 символов.` |
+| `vehicleType.tonnage` | Если передан — больше 0 | `Грузоподъемность должна быть больше 0.` |
+| `vehicleType.volume` | Если передан — больше 0 | `Объем должен быть больше 0.` |
+| `temperatureRegime` | Обязательны `minimum` и `maximum` | `Не указаны минимальная и максимальная температура.` |
+| `temperatureRegime.*` | Каждая граница от −30 до 30 °C включительно | `Температура должна быть в диапазоне от -30 до 30 °C.` |
+| `temperatureRegime` | `minimum < maximum` | `Минимальная температура должна быть меньше максимальной.` |
+| `bidPoints[].geozone.address` | Обязательная непустая строка | `Не указан адрес точки N.` |
+| Геокодирование | По адресу должна определиться точка | `Не удалось определить координаты точки N по адресу «…».` |
 
 ---
 
@@ -3263,6 +3556,19 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "counterparty": {
+                "name": "ООО Ромашка",
+                "inn": "7701234567"
+              },
+              "vehicleType": {
+                "name": "Рефрижератор",
+                "tonnage": 20,
+                "volume": 82
+              },
+              "temperatureRegime": {
+                "minimum": 2,
+                "maximum": 6
+              },
               "cargos": [
                 {
                   "name": "Паллетированный груз"
@@ -3270,6 +3576,7 @@ Idempotency-Key: write-order-2471970-v1
               ],
               "bidPoints": [
                 {
+                  "externalId": "POINT-LOAD-1",
                   "isLoadPoint": true,
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
@@ -3278,11 +3585,11 @@ Idempotency-Key: write-order-2471970-v1
                   }
                 },
                 {
+                  "externalId": "POINT-UNLOAD-1",
                   "isLoadPoint": false,
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
-                    "address": "Казань, улица Примерная, 2",
-                    "location": { "coordinates": [49.1064, 55.7961] }
+                    "address": "Казань, улица Примерная, 2"
                   }
                 }
               ],
@@ -3419,7 +3726,11 @@ Source: products/partner-integrations/launch-checklist.md
 - [ ] Проверено обновление по `externalId`.
 - [ ] Проверено повторение запроса после сетевой ошибки.
 - [ ] Корректно обрабатываются локальные даты точек.
-- [ ] Координаты передаются как `[долгота, широта]`.
+- [ ] У каждой точки передан непустой адрес.
+- [ ] Проверено создание точки без координат и её геокодирование по адресу.
+- [ ] Если координаты передаются, используется порядок `[долгота, широта]`.
+- [ ] При обновлении передаются стабильные `externalId` точек и сохраняются их статусы.
+- [ ] Проверены `counterparty`, `vehicleType` и `temperatureRegime`, если они используются.
 - [ ] Сохраняется ID заявки CARGO.RUN.
 
 ## Очередь
@@ -3443,7 +3754,9 @@ Source: products/partner-integrations/launch-checklist.md
 
 ## Восстановление
 
-- [ ] Выполнена первоначальная загрузка через `ReadQuery` или `GetCurrentList`.
+- [ ] Выполнена первоначальная загрузка через `ReadQuery` или объединённый `GetList`.
+- [ ] Обрабатываются оба значения `isCreatedByPlatform`.
+- [ ] Учтено, что `GetList` без `X-Organization-Id` возвращает все доступные организации.
 - [ ] Хранится курсор `(updatedAt,id)`.
 - [ ] Используется перекрытие интервалов.
 - [ ] Реализована периодическая контрольная сверка.
@@ -3456,6 +3769,7 @@ Source: products/partner-integrations/launch-checklist.md
 - [ ] Настроено разумное прореживание координат.
 - [ ] Файлы скачиваются до истечения временной ссылки.
 - [ ] Неизвестные поля и enum не останавливают синхронизацию.
+- [ ] Учтено, что изменение ETA не обязательно меняет `updatedAt`.
 
 ---
 
@@ -3482,3 +3796,15 @@ Source: products/partner-integrations/for-ai.md
 - Начинайте с `llms.txt`, чтобы не загружать лишний контекст.
 - Используйте `llms-full.txt`, если агенту требуется анализ всей интеграции или проверка связей между сценариями, методами и моделями.
 - Считайте опубликованную документацию источником требований к интеграции. Секреты, токены и реальные персональные данные в контекст модели не передавайте.
+
+## Правила для агентов
+
+- Не вызывайте удалённый `Bids/GetCurrentList`; используйте объединённый `Bids/GetList`.
+- Определяйте источник записи по `isCreatedByPlatform`, а не по наличию `externalId`.
+- Перед вызовом `GetList` явно решите, нужна одна организация или все доступные:
+  отсутствие `X-Organization-Id` расширяет область выборки.
+- Для обновления заявки сохраняйте `id` CARGO.RUN и стабильные `externalId` точек.
+- Не считайте `updatedAt` курсором ETA: `estimatedEnterDate` может измениться без
+  изменения заявки.
+- Передавайте непустой адрес каждой точки. Координаты можно опустить, но ошибка
+  геокодирования требует исправления адреса, а не слепого повтора.

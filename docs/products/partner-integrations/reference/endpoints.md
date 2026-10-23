@@ -10,8 +10,7 @@
 | `GET /api/integrations/Organizations/Check` | Проверить организацию по ИНН |
 | `POST /api/integrations/Organizations/Apply` | Создать организацию или получить доступ |
 | `POST /api/integrations/Bids/Apply` | Создать или обновить заявку |
-| `GET /api/integrations/Bids/GetList` | Получить заявки, созданные текущим партнёром |
-| `GET /api/integrations/Bids/GetCurrentList` | Получить заявки, связанные с платформой партнёра |
+| `GET /api/integrations/Bids/GetList` | Получить созданные партнёром и транслируемые ему заявки |
 | `GET /api/integrations/Bids/Get` | Получить карточку заявки |
 | `GET /api/integrations/Bids/GetEvents` | Получить события заявки |
 | `GET /api/integrations/Bids/GetPlannedRoute` | Получить плановый маршрут |
@@ -49,13 +48,19 @@
 
 Тело: [`CreateIntegrationOrganizationContext`](#createintegrationorganizationcontext).
 
-Поиск выполняется по ИНН. Без ИНН используется служебная организация. Успех: `200 OK`, модель [`OrganizationApplyResult`](#organizationapplyresult).
+Поиск выполняется по ИНН. Без ИНН используется служебная организация. Для новой
+организации, создаваемой партнёрским сервисом, сразу включается модуль
+«Температурный режим». Успех: `200 OK`, модель
+[`OrganizationApplyResult`](#organizationapplyresult).
 
 ## `POST /api/integrations/Bids/Apply`
 
 Тело: [`ApplyBidFromIntegrationContext`](#applybidfromintegrationcontext). Результат: [`ApplyBidResultModel`](#applybidresultmodel).
 
-Создаёт или полностью обновляет заявку, создаёт недостающие транспорт и водителей и запускает заявку в работу.
+Создаёт или полностью обновляет заявку, создаёт недостающие транспорт, водителей и
+контрагента, применяет характеристики ТС и температурный режим и запускает заявку в
+работу. Если координаты точки не переданы, CARGO.RUN определяет их по обязательному
+адресу.
 
 Успех: `200 OK`:
 
@@ -70,15 +75,34 @@
 
 ## `GET /api/integrations/Bids/GetList`
 
-Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel) — заявки, созданные текущим партнёром и имеющие его `externalId`.
+Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel):
+
+- заявки, созданные текущим партнёром;
+- заявки перевозчиков, транслируемые платформе партнёра.
+
+Поле `isCreatedByPlatform` различает эти виды. Для собственной заявки `externalId`
+содержит ID, переданный в `Apply`; для транслируемой — ID заказа, указанный
+перевозчиком для платформы.
+
+| Заголовок | Обязательно | Поведение |
+|---|---:|---|
+| `X-Organization-Id` | Нет | Если передан, возвращаются заявки только этой доступной организации. Без заголовка возвращаются заявки всех организаций, доступных интеграционному клиенту. |
+
+Без непустого `$filter` сервер ограничивает список заявками, изменёнными за последние
+30 дней. Любой явно переданный непустой `$filter` отменяет это окно, поэтому для
+инкрементальной синхронизации всегда указывайте границу по `updatedAt`.
+
+Сортировка по умолчанию — `updatedAt,id`. Ответ также содержит несервисные точки
+`points` и их события `events`. События вычисляются после основной выборки и не
+участвуют в `$filter` и `$orderby`.
 
 Поддерживает OData-параметры и заголовок `X-MetaCount`.
 
-## `GET /api/integrations/Bids/GetCurrentList`
-
-Возвращает [`IntegrationBidListModel[]`](#integrationbidlistmodel) — заявки, которые перевозчики связали с платформой текущего интеграционного клиента. В `externalId` возвращается ID заказа партнёра.
-
-Поддерживает OData-параметры и `X-MetaCount`.
+!!! warning "Миграция с GetCurrentList"
+    `GET /api/integrations/Bids/GetCurrentList` удалён. Используйте `GetList` и
+    определяйте источник заявки по `isCreatedByPlatform`. Отсутствие
+    `X-Organization-Id` означает выборку по всем доступным организациям, а не по одной
+    текущей организации.
 
 ## `GET /api/integrations/Bids/Get`
 
@@ -90,7 +114,13 @@
 
 ## `GET /api/integrations/Bids/GetEvents`
 
-Параметр `id` — обязательный ID заявки CARGO.RUN. Успех: [`IntegrationBidEventModel[]`](#integrationbideventmodel). Значения `type`: [`IntegrationBidEventType`](#integrationbideventtype).
+Параметр `id` — обязательный ID заявки CARGO.RUN. Успех:
+[`IntegrationBidEventModel[]`](#integrationbideventmodel). Значения `type`:
+[`IntegrationBidEventType`](#integrationbideventtype).
+
+События самой заявки возвращаются в часовом поясе организации, события точек — в
+часовом поясе соответствующей точки. В отличие от `GetList.events`, отдельный метод
+включает события сервисных точек, если у них есть фактические даты.
 
 ## `GET /api/integrations/Bids/GetPlannedRoute`
 
@@ -139,7 +169,10 @@ Authorization: Bearer <accessToken.token>
 |---|---|---|
 | `Idempotency-Key` | До 100 символов | Возвращает те же задачи при повторе в течение 24 часов |
 
-Поддерживаются только комбинации `Write/Read/ReadQuery` для `Bid`, перечисленные в разделе [Асинхронная очередь](../async-queue.md).
+Поддерживаются только комбинации `Write/Read/ReadQuery` для `Bid`, перечисленные в
+разделе [Асинхронная очередь](../async-queue.md). `Write` использует тот же контракт,
+что `Bids/Apply`. `ReadQuery` эквивалентен `Bids/GetList` без
+`X-Organization-Id`.
 
 Успешная постановка возвращает сведения о созданных задачах и их `id`. Для каждой команды может быть `status="Success"` или `status="Failed"`.
 

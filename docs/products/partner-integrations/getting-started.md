@@ -34,18 +34,22 @@ Authorization: Bearer <accessToken.token>
 
 === "Перевозчик связал заявку с партнёром"
 
-    1. Получить связанные заявки через [`Bids/GetCurrentList`](reference/endpoints.md#get-apiintegrationsbidsgetcurrentlist) или асинхронный `ReadQuery`.
+    1. Получить объединённый список собственных и транслируемых заявок через [`Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) или асинхронный `ReadQuery`.
     2. Сохранить ID заявок CARGO.RUN.
     3. Получать полные данные синхронными методами или асинхронным `Read`.
 
-## 3. Получить связанные заявки
+## 3. Получить заявки
 
 Синхронно:
 
 ```http
-GET <baseUrl>/api/integrations/Bids/GetCurrentList?$orderby=updatedAt,id&$top=100
+GET <baseUrl>/api/integrations/Bids/GetList?$orderby=updatedAt,id&$top=100
 Authorization: Bearer <accessToken.token>
 ```
+
+Без `X-Organization-Id` метод возвращает заявки всех доступных организаций. Поле
+`isCreatedByPlatform` отличает созданные партнёром заявки от транслируемых
+перевозчиками.
 
 Асинхронно:
 
