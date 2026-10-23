@@ -294,7 +294,7 @@ Authorization: Bearer <accessToken.token>
 | `canCreateBids=true`, `hasAccess=false` | Вызвать [`Organizations/Apply`](reference/endpoints.md#post-apiintegrationsorganizationsapply) для получения доступа |
 | `canCreateBids=false` | Не создавать заявку; можно читать заявки, которые перевозчик связал с партнёром |
 
-## Создание организации или получение доступа
+## Создание организации
 
 ```http
 POST <baseUrl>/api/integrations/Organizations/Apply
@@ -311,7 +311,7 @@ Content-Type: application/json
 }
 ```
 
-Поиск выполняется по ИНН. Если ИНН не передан, используется выделенная служебная организация.
+Поля `name` и `inn` обязательны. Поиск организации выполняется по ИНН.
 
 Правила:
 
@@ -1529,7 +1529,7 @@ Source: products/partner-integrations/reference/endpoints.md
 
 Тело: [`CreateIntegrationOrganizationContext`](#createintegrationorganizationcontext).
 
-Поиск выполняется по ИНН. Без ИНН используется служебная организация. Для новой
+Поля `name` и `inn` обязательны. Поиск организации выполняется по `inn`. Для новой
 организации, создаваемой партнёрским сервисом, сразу включается модуль
 «Температурный режим». Успех: `200 OK`, модель
 [`OrganizationApplyResult`](#organizationapplyresult).
@@ -1780,8 +1780,8 @@ Authorization: Bearer <accessToken.token>
 
 | Поле | Тип | Обязательно | `null` | Ограничения | Описание |
 |---|---|---:|---:|---|---|
-| `name` | `string` | Нет | Да | — | Название |
-| `inn` | `string` | Нет | Да | — | ИНН |
+| `name` | `string` | Да | Нет | — | Название организации. |
+| `inn` | `string` | Да | Нет | — | ИНН организации. |
 | `kpp` | `string` | Нет | Да | — | КПП |
 | `ogrn` | `string` | Нет | Да | — | ОГРН |
 

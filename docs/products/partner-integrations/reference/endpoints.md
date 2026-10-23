@@ -48,7 +48,7 @@
 
 Тело: [`CreateIntegrationOrganizationContext`](#createintegrationorganizationcontext).
 
-Поиск выполняется по ИНН. Без ИНН используется служебная организация. Для новой
+Поля `name` и `inn` обязательны. Поиск организации выполняется по `inn`. Для новой
 организации, создаваемой партнёрским сервисом, сразу включается модуль
 «Температурный режим». Успех: `200 OK`, модель
 [`OrganizationApplyResult`](#organizationapplyresult).
