@@ -36,7 +36,7 @@ Authorization: Bearer <accessToken.token>
 | `canCreateBids=true`, `hasAccess=false` | Вызвать [`Organizations/Apply`](reference/endpoints.md#post-apiintegrationsorganizationsapply) для получения доступа |
 | `canCreateBids=false` | Не создавать заявку; можно читать заявки, которые перевозчик связал с партнёром |
 
-## Создание организации или получение доступа
+## Создание организации
 
 ```http
 POST <baseUrl>/api/integrations/Organizations/Apply
@@ -53,7 +53,7 @@ Content-Type: application/json
 }
 ```
 
-Поиск выполняется по ИНН. Если ИНН не передан, используется выделенная служебная организация.
+Поля `name` и `inn` обязательны. Поиск организации выполняется по ИНН.
 
 Правила:
 
