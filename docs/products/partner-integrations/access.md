@@ -79,17 +79,26 @@ Content-Type: application/json
 
 Знание ID не предоставляет доступ к произвольной заявке.
 
-При синхронном чтении недоступной или несуществующей заявки возвращается `404 Not Found`. В асинхронной очереди HTTP-запрос задачи может завершиться успешно, а ошибка возвращается в `objects[].status="Error"` и `objects[].message`.
+При синхронном чтении недоступной, удалённой или несуществующей заявки методы
+`Bids/Get`, `GetActualRoute`, `GetPlannedRoute`, `GetEvents` и
+`GetDriverMessages` обычно возвращают `200 OK` с пустым телом. Это намеренно не
+позволяет отличить отсутствие заявки от отсутствия доступа. В асинхронной очереди
+HTTP-запрос задачи может завершиться успешно, а ошибка возвращается в
+`objects[].status="Error"` и `objects[].message`.
 
 ## Идентификаторы заявки
 
 | Идентификатор | Назначение |
 |---|---|
 | `id` | Внутренний ID заявки CARGO.RUN |
-| `bid.externalId` | ID заявки, созданной партнёрским сервисом |
-| `ExternalPlatformOrderId` | ID заказа партнёра, указанный перевозчиком в CARGO.RUN |
-| `IntegrationBidListModel.externalId` | Для связанной заявки содержит `ExternalPlatformOrderId`; для собственной — `bid.externalId` |
+| `bid.externalId` | Внешний ID заявки, переданный партнёрским сервисом. Не гарантируется уникальность |
+| `IntegrationBidListModel.externalId` | Значение `bid.externalId` независимо от источника заявки |
+| `IntegrationBidListModel.externalPlatformOrderId` | Числовой ID заказа партнёрской платформы, указанный перевозчиком в CARGO.RUN |
 | `objects[].key` | При `Write` используется как `bid.externalId`, если поле внутри `bid` не заполнено |
+
+Для вызовов `Bids/GetList`, `Bids/Get`, `Bids/GetEvents` и других методов чтения
+используйте внутренний `id` CARGO.RUN. Не используйте `externalId` как уникальный
+ключ.
 
 ## Область объединённого списка
 
