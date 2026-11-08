@@ -193,6 +193,12 @@ Started → Done
 | `UnloadPoint` | 2 | Выгрузка |
 | `CustomPoint` | 3 | Пользовательская точка |
 | `ServicePoint` | 4 | Сервисная точка |
+| `LoadUnloadPoint` | 5 | Совмещённая погрузка и выгрузка |
+
+Во входной модели `IntegrationBidPointModel` разрешены только `LoadPoint`,
+`UnloadPoint` и `LoadUnloadPoint`. При этом маршрут должен отдельно содержать хотя
+бы одну точку `LoadPoint` и хотя бы одну точку `UnloadPoint`:
+`LoadUnloadPoint` не выполняет это обязательное условие самостоятельно.
 
 ### `BidPointLoadUnloadStatus`
 
