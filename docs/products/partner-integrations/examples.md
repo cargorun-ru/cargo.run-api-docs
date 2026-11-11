@@ -75,6 +75,7 @@ Idempotency-Key: write-order-2471970-v1
                 {
                   "externalId": "POINT-LOAD-1",
                   "type": "LoadPoint",
+                  "client": "ООО Грузоотправитель",
                   "planEnterDate": "2026-10-08T10:00:00",
                   "geozone": {
                     "address": "Москва, улица Примерная, 1",
@@ -84,6 +85,7 @@ Idempotency-Key: write-order-2471970-v1
                 {
                   "externalId": "POINT-UNLOAD-1",
                   "type": "UnloadPoint",
+                  "client": "ООО Грузополучатель",
                   "planEnterDate": "2026-10-09T10:00:00",
                   "geozone": {
                     "address": "Казань, улица Примерная, 2"
