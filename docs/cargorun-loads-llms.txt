@@ -25,6 +25,7 @@
 - [api/reports.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/reports/): отчеты.
 - [api/counterparties.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/counterparties/): контрагенты.
 - [api/transporter.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/transporter/): API перевозчика.
+- [api/transporter-directories.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/transporter-directories/): водители, тягачи и прицепы перевозчика.
 - [api/directories.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/directories/): справочники.
 - [api/map.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/api/map/): геокодирование и маршруты.
 - [for-ai.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-loads/for-ai/): правила для LLM и ИИ-агентов.

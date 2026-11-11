@@ -4,13 +4,15 @@
 
 ---
 
-## 1. Получение доступных заказов
+## 1. Получение доступных заказов {#transporter-orders-get-list}
 
 ```http
 GET /api/TransporterOrders/GetList
 ```
 
 Метод возвращает заказы, доступные текущей организации перевозчика.
+
+Требуется токен пользователя организации. Сервер определяет текущую организацию по токену и возвращает только те заказы, которые доступны ей по правилам видимости.
 
 Используется для получения списка заказов, доступных перевозчику для выполнения: как заказов своей организации, так и чужих доступных заказов. В интерфейсе соответствует разделу **«Поиск заказов»**.
 
@@ -20,7 +22,7 @@ GET /api/TransporterOrders/GetList
 
 | Параметр | Описание |
 |---|---|
-| `$filter` | Фильтр по полям модели |
+| `$filter` | Фильтр по полям модели, например `loadStart`, `locationFrom`, `locationTo` |
 | `$orderby` | Сортировка по полям модели |
 | `$top` | Ограничение количества записей |
 | `$skip` | Смещение |
@@ -36,6 +38,24 @@ GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
 ```http
 GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдарово') and contains(locationTo,'Ильинское-Усово')&$top=50&$skip=0
 ```
+
+### Фильтрация по дате погрузки
+
+Отдельные query-параметры `loadStartFrom` и `loadStartTo` не поддерживаются. Передавайте диапазон через `$filter` по полю `loadStart`.
+
+Для календарного диапазона используйте полуинтервал: начало периода включается через `ge`, начало следующего дня не включается через `lt`.
+
+```http
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-11-10T00:00:00%2B03:00 and loadStart lt 2026-11-16T00:00:00%2B03:00
+```
+
+Тот же период в UTC:
+
+```http
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-11-09T21:00:00Z and loadStart lt 2026-11-15T21:00:00Z
+```
+
+Подробнее о датах и границах диапазона: [Форматы данных](../formats.md#date-ranges).
 
 ### Ответ
 
@@ -65,6 +85,8 @@ GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдаров
       "orderPriceType": 10,
       "orderCost": 25000,
       "accessType": 30,
+      "visibleForOrganizationsIds": [95713],
+      "visibleForOrganizationNames": null,
       "output": 678.49,
       "subscribeFilterId": null
     }
@@ -98,13 +120,27 @@ GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдаров
 | `orderPriceType` | `OrderPriceType?` | Тип стоимости: `10` фиксированная, `20` аукцион, `30` предложение цены |
 | `offersFixAt` | `date-time?` | Время фиксации предложений |
 | `offersAreFixed` | `boolean?` | Признак, что предложения зафиксированы |
-| `accessType` | `OrderAccessType` | Видимость заказа: `10` всем, `20` связанным организациям, `30` выбранным связанным организациям |
-| `visibleForOrganizationsIds` | `long[]?` | ID организаций, которым виден заказ |
-| `visibleForOrganizationNames` | `string[]?` | Названия организаций, которым виден заказ |
+| `accessType` | `OrderAccessType` | Режим видимости заказа; значения приведены ниже |
+| `visibleForOrganizationsIds` | `long[]?` | Внутренние ID организаций-адресатов для адресного заказа |
+| `visibleForOrganizationNames` | `string[]?` | Поле общей модели не заполняется этим методом и может приходить как `null` или пустой массив |
 | `orderCost` | `double?` | Стоимость заказа для заказчика |
 | `orderCostDeviationPercent` | `double?` | Отклонение стоимости в процентах |
 | `output` | `double?` | Расчетный показатель вывода/результата |
 | `subscribeFilterId` | `long?` | ID фильтра подписки, по которому заказ попал в список |
+
+### Видимость заказа
+
+| `accessType` | Значение | Кто видит заказ |
+|---:|---|---|
+| `10` | `Public` | Все подходящие перевозчики |
+| `20` | `RelationsOrganizationsOnly` | Организации, связанные с владельцем заказа |
+| `30` | `SelectedRelationsOrganizationsOnly` | Только организации из `visibleForOrganizationsIds` |
+
+Для адресного заказа используется `accessType = 30`. Массив `visibleForOrganizationsIds` содержит внутренние ID организаций, а не ИНН.
+
+Метод не возвращает ИНН организаций-адресатов. Поле `visibleForOrganizationNames` предусмотрено общей моделью, однако `GET /api/TransporterOrders/GetList` его не заполняет. Если приложению нужны названия или реквизиты всех адресатов, их необходимо получать отдельным согласованным способом.
+
+Для обычного приложения перевозчика список всех адресатов обычно не требуется: сам факт присутствия заказа в ответе означает, что заказ доступен текущей организации.
 
 ---
 
@@ -129,7 +165,7 @@ GET /api/TransporterOrders/GetInfo?id={order_id}
 
 ---
 
-## 3. Создание отклика из справочников
+## 3. Создание отклика из справочников {#transporter-matching-apply}
 
 ```http
 POST /api/TransporterOrderTruckMatchings/ApplyMatching
@@ -434,6 +470,8 @@ POST /api/TransporterBids/ApplyOrderPointFactTimes
 | Водители | `GET /api/TransporterDriver/List` | `POST /api/TransporterDriver/Apply` | `POST /api/TransporterDriver/Delete` |
 
 Удаление справочников перевозчика является мягким: данные остаются в базе, но становятся недоступны пользователям.
+
+Организация ресурса определяется токеном. Правила создания, модели и защита от дублей описаны на отдельной странице [Справочники перевозчика](./transporter-directories.md).
 
 Списки справочников возвращают стандартный ответ:
 

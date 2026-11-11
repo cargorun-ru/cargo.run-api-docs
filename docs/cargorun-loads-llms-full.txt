@@ -109,6 +109,10 @@ Source: products/cargorun-loads/index.md
 - API перевозчика
   [Transporter API](./api/transporter.md)
 
+- Водители, тягачи и прицепы перевозчика
+
+  [Справочники перевозчика](./api/transporter-directories.md)
+
 ---
 
 **Последнее обновление:** 2026-10-16
@@ -380,6 +384,24 @@ Access token действует около 30 минут. После истеч�
 
 В ответах API даты приходят в UTC или с явным смещением часового пояса. В точках маршрута также может возвращаться `timezoneId`, например `Europe/Moscow`.
 
+### Диапазоны дат {#date-ranges}
+
+Для календарных диапазонов рекомендуется использовать полуинтервал: включать начало первого дня оператором `ge` и исключать начало следующего дня после периода оператором `lt`.
+
+Например, период с 10 по 15 ноября 2026 года в часовом поясе `+03:00`:
+
+```http
+$filter=loadStart ge 2026-11-10T00:00:00%2B03:00 and loadStart lt 2026-11-16T00:00:00%2B03:00
+```
+
+Эквивалент в UTC:
+
+```http
+$filter=loadStart ge 2026-11-09T21:00:00Z and loadStart lt 2026-11-15T21:00:00Z
+```
+
+Полуинтервал не теряет записи с долями секунды в конце последнего дня.
+
 ---
 
 ## 4. Фильтрация и пагинация
@@ -404,7 +426,7 @@ GET /api/Orders/GetIntegrationList?$filter=updatedAt ge 2026-06-01T00:00:00.000Z
 ```
 
 ```http
-GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart le 2026-06-29T21:00:00.000Z
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart lt 2026-06-30T21:00:00.000Z
 ```
 
 Для текстового поиска по справочникам можно использовать:
@@ -1239,12 +1261,13 @@ Source: products/cargorun-loads/integration/scenario-transporter.md
 
 1. Перевозчик получает или создает учетную запись.
 2. Система перевозчика авторизуется через `POST /api/Account/GenerateToken`.
-3. Перевозчик получает доступные заказы через `GET /api/TransporterOrders/GetList`.
-4. По интересующему заказу получает детали через `GET /api/TransporterOrders/GetInfo`.
-5. Отправляет отклик через `POST /api/TransporterOrderTruckMatchings/ApplyMatching` или `ApplyManualMatching`.
-6. Отслеживает результат выбора перевозчика.
-7. Если заказ назначен перевозчику, получает заявку через `GET /api/TransporterBids/GetInfo`.
-8. Передает фактические времена по точкам через `POST /api/TransporterBids/ApplyOrderPointFactTimes`.
+3. При необходимости проверяет или создает водителей, тягачи и прицепы в [справочниках перевозчика](../api/transporter-directories.md).
+4. Перевозчик получает доступные заказы через [`GET /api/TransporterOrders/GetList`](../api/transporter.md#transporter-orders-get-list).
+5. По интересующему заказу получает детали через `GET /api/TransporterOrders/GetInfo`.
+6. Отправляет отклик через `POST /api/TransporterOrderTruckMatchings/ApplyMatching` или `ApplyManualMatching`.
+7. Отслеживает результат выбора перевозчика.
+8. Если заказ назначен перевозчику, получает заявку через `GET /api/TransporterBids/GetInfo`.
+9. Передает фактические времена по точкам через `POST /api/TransporterBids/ApplyOrderPointFactTimes`.
 
 ---
 
@@ -1273,7 +1296,7 @@ GET /api/TransporterOrders/GetList
 Список можно фильтровать, например по периоду погрузки:
 
 ```http
-GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart le 2026-06-29T21:00:00.000Z
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart lt 2026-06-30T21:00:00.000Z
 ```
 
 Из ответа сохраните `data[].id`. Этот ID нужен для получения карточки заказа и отправки отклика.
@@ -1314,6 +1337,8 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
 | ТС | `GET /api/TransporterTruck/List` |
 | Прицеп | `GET /api/TransporterTrailer/List` |
 | Водитель | `GET /api/TransporterDriver/List` |
+
+Организация этих ресурсов определяется токеном. Передавать `organizationId` в методы `Apply` не требуется. Перед созданием водителя проверьте список, чтобы не создать дубль. Подробно: [Справочники перевозчика](../api/transporter-directories.md).
 
 Минимальный смысловой набор для отклика:
 
@@ -2949,13 +2974,15 @@ Source: products/cargorun-loads/api/transporter.md
 
 ---
 
-## 1. Получение доступных заказов
+## 1. Получение доступных заказов {#transporter-orders-get-list}
 
 ```http
 GET /api/TransporterOrders/GetList
 ```
 
 Метод возвращает заказы, доступные текущей организации перевозчика.
+
+Требуется токен пользователя организации. Сервер определяет текущую организацию по токену и возвращает только те заказы, которые доступны ей по правилам видимости.
 
 Используется для получения списка заказов, доступных перевозчику для выполнения: как заказов своей организации, так и чужих доступных заказов. В интерфейсе соответствует разделу **«Поиск заказов»**.
 
@@ -2965,7 +2992,7 @@ GET /api/TransporterOrders/GetList
 
 | Параметр | Описание |
 |---|---|
-| `$filter` | Фильтр по полям модели |
+| `$filter` | Фильтр по полям модели, например `loadStart`, `locationFrom`, `locationTo` |
 | `$orderby` | Сортировка по полям модели |
 | `$top` | Ограничение количества записей |
 | `$skip` | Смещение |
@@ -2981,6 +3008,24 @@ GET /api/TransporterOrders/GetList?$orderby=loadStart asc&$top=50&$skip=0
 ```http
 GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдарово') and contains(locationTo,'Ильинское-Усово')&$top=50&$skip=0
 ```
+
+### Фильтрация по дате погрузки
+
+Отдельные query-параметры `loadStartFrom` и `loadStartTo` не поддерживаются. Передавайте диапазон через `$filter` по полю `loadStart`.
+
+Для календарного диапазона используйте полуинтервал: начало периода включается через `ge`, начало следующего дня не включается через `lt`.
+
+```http
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-11-10T00:00:00%2B03:00 and loadStart lt 2026-11-16T00:00:00%2B03:00
+```
+
+Тот же период в UTC:
+
+```http
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-11-09T21:00:00Z and loadStart lt 2026-11-15T21:00:00Z
+```
+
+Подробнее о датах и границах диапазона: [Форматы данных](../formats.md#date-ranges).
 
 ### Ответ
 
@@ -3010,6 +3055,8 @@ GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдаров
       "orderPriceType": 10,
       "orderCost": 25000,
       "accessType": 30,
+      "visibleForOrganizationsIds": [95713],
+      "visibleForOrganizationNames": null,
       "output": 678.49,
       "subscribeFilterId": null
     }
@@ -3043,13 +3090,27 @@ GET /api/TransporterOrders/GetList?$filter=contains(locationFrom,'Айдаров
 | `orderPriceType` | `OrderPriceType?` | Тип стоимости: `10` фиксированная, `20` аукцион, `30` предложение цены |
 | `offersFixAt` | `date-time?` | Время фиксации предложений |
 | `offersAreFixed` | `boolean?` | Признак, что предложения зафиксированы |
-| `accessType` | `OrderAccessType` | Видимость заказа: `10` всем, `20` связанным организациям, `30` выбранным связанным организациям |
-| `visibleForOrganizationsIds` | `long[]?` | ID организаций, которым виден заказ |
-| `visibleForOrganizationNames` | `string[]?` | Названия организаций, которым виден заказ |
+| `accessType` | `OrderAccessType` | Режим видимости заказа; значения приведены ниже |
+| `visibleForOrganizationsIds` | `long[]?` | Внутренние ID организаций-адресатов для адресного заказа |
+| `visibleForOrganizationNames` | `string[]?` | Поле общей модели не заполняется этим методом и может приходить как `null` или пустой массив |
 | `orderCost` | `double?` | Стоимость заказа для заказчика |
 | `orderCostDeviationPercent` | `double?` | Отклонение стоимости в процентах |
 | `output` | `double?` | Расчетный показатель вывода/результата |
 | `subscribeFilterId` | `long?` | ID фильтра подписки, по которому заказ попал в список |
+
+### Видимость заказа
+
+| `accessType` | Значение | Кто видит заказ |
+|---:|---|---|
+| `10` | `Public` | Все подходящие перевозчики |
+| `20` | `RelationsOrganizationsOnly` | Организации, связанные с владельцем заказа |
+| `30` | `SelectedRelationsOrganizationsOnly` | Только организации из `visibleForOrganizationsIds` |
+
+Для адресного заказа используется `accessType = 30`. Массив `visibleForOrganizationsIds` содержит внутренние ID организаций, а не ИНН.
+
+Метод не возвращает ИНН организаций-адресатов. Поле `visibleForOrganizationNames` предусмотрено общей моделью, однако `GET /api/TransporterOrders/GetList` его не заполняет. Если приложению нужны названия или реквизиты всех адресатов, их необходимо получать отдельным согласованным способом.
+
+Для обычного приложения перевозчика список всех адресатов обычно не требуется: сам факт присутствия заказа в ответе означает, что заказ доступен текущей организации.
 
 ---
 
@@ -3074,7 +3135,7 @@ GET /api/TransporterOrders/GetInfo?id={order_id}
 
 ---
 
-## 3. Создание отклика из справочников
+## 3. Создание отклика из справочников {#transporter-matching-apply}
 
 ```http
 POST /api/TransporterOrderTruckMatchings/ApplyMatching
@@ -3380,6 +3441,8 @@ POST /api/TransporterBids/ApplyOrderPointFactTimes
 
 Удаление справочников перевозчика является мягким: данные остаются в базе, но становятся недоступны пользователям.
 
+Организация ресурса определяется токеном. Правила создания, модели и защита от дублей описаны на отдельной странице [Справочники перевозчика](./transporter-directories.md).
+
 Списки справочников возвращают стандартный ответ:
 
 ```json
@@ -3395,6 +3458,157 @@ POST /api/TransporterBids/ApplyOrderPointFactTimes
   "totalCount": 1
 }
 ```
+
+---
+
+Source: products/cargorun-loads/api/transporter-directories.md
+
+# Справочники перевозчика
+
+Раздел описывает создание и обновление водителей, тягачей и прицепов организации перевозчика.
+
+## Общие правила
+
+| Сущность | Список | Создание или обновление | Удаление |
+|---|---|---|---|
+| Водители | `GET /api/TransporterDriver/List` | `POST /api/TransporterDriver/Apply` | `POST /api/TransporterDriver/Delete` |
+| Тягачи | `GET /api/TransporterTruck/List` | `POST /api/TransporterTruck/Apply` | `POST /api/TransporterTruck/Delete` |
+| Прицепы | `GET /api/TransporterTrailer/List` | `POST /api/TransporterTrailer/Apply` | `POST /api/TransporterTrailer/Delete` |
+
+Для методов `Apply`:
+
+- отсутствие `id` или `id = 0` означает создание;
+- существующий `id` означает обновление;
+- организация определяется по токену авторизованного пользователя;
+- передавать `organizationId` в теле не требуется: поле исключено из публичной модели;
+- при успехе сервер возвращает `200 OK` и сохраненную модель с заполненным `id`.
+
+Нельзя создать ресурс в произвольно выбранной организации передачей ее ID. Запрос с токеном экспедитора создаст ресурс организации экспедитора. Для работы с ресурсами разных перевозчиков используйте токен пользователя соответствующей организации.
+
+Полученный `id` сохраните: он используется для обновления, удаления и создания отклика через [`POST /api/TransporterOrderTruckMatchings/ApplyMatching`](./transporter.md#transporter-matching-apply).
+
+Упрощенный фрагмент успешного ответа:
+
+```json
+{
+  "id": 12345
+}
+```
+
+## Водители {#transporter-driver-apply}
+
+```http
+POST /api/TransporterDriver/Apply
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+### Обязательные поля обычного водителя
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `firstName` | `string` | Имя |
+| `lastName` | `string` | Фамилия |
+| `phoneNumber` | `string` | Номер телефона |
+| `passportSeries` | `string` | Серия паспорта |
+| `passportNumber` | `string` | Номер паспорта |
+| `passportGivenBy` | `string` | Кем выдан паспорт |
+| `passportGivenWhen` | `date-time` | Дата выдачи паспорта |
+
+Дополнительно можно передать отчество, адреса регистрации и проживания, сведения о водительском удостоверении, дату рождения, ИНН и комментарий.
+
+Пример создания:
+
+```json
+{
+  "id": 0,
+  "firstName": "Иван",
+  "lastName": "Петров",
+  "patronymic": "Сергеевич",
+  "phoneNumber": "+79990000000",
+  "passportSeries": "9200",
+  "passportNumber": "123456",
+  "passportGivenBy": "МВД России",
+  "passportGivenWhen": "2020-04-15"
+}
+```
+
+### Защита от дублей
+
+`TransporterDriver/Apply` с `id = 0` создает новую запись и не выполняет upsert по телефону, ФИО, паспорту или водительскому удостоверению.
+
+Перед созданием водителя:
+
+1. Получите список через `GET /api/TransporterDriver/List`.
+2. На своей стороне сравните нормализованный телефон и, дополнительно, ФИО.
+3. Если водитель найден, используйте его `id` для обновления или отклика вместо повторного создания.
+4. Передавайте телефон в одном согласованном формате.
+
+### Синхронизация с 1С Делко
+
+Если для организации настроена синхронизация водителей с 1С Делко, локальная запись сопоставляется с поступившей записью прежде всего по нормализованному телефону. Если телефон отсутствует у одной из сравниваемых записей, используется сочетание фамилии, имени и отчества.
+
+При совпадении существующая локальная запись преобразуется в синхронизируемую с сохранением внутреннего `id`. Если совпадение не найдено, может появиться отдельная запись. Поэтому проверяйте список до вызова `Apply` с `id = 0`.
+
+## Тягачи {#transporter-truck-apply}
+
+```http
+POST /api/TransporterTruck/Apply
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Основные поля:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | `0` для создания, существующий ID для обновления |
+| `number` | `string?` | Госномер |
+| `trailerTypeId` | `long?` | Требуемый тип полуприцепа/кузова |
+| `truckTypeId` | `long?` | Тип ТС |
+| `truckModelTypeId` | `long?` | Модель ТС |
+| `isRented` | `boolean` | Признак аренды |
+| `ownershipTypeId` | `long?` | Тип владения |
+| `ownerName`, `ownerInn` | `string?` | Собственник и его ИНН |
+| `vinNumber` | `string?` | VIN |
+| `vehiclePassportNumber` | `string?` | Номер ПТС |
+| `releaseYearNumber` | `int?` | Год выпуска |
+
+## Прицепы {#transporter-trailer-apply}
+
+```http
+POST /api/TransporterTrailer/Apply
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Основные поля:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | `0` для создания, существующий ID для обновления |
+| `number` | `string?` | Госномер прицепа |
+| `trailerTypeId` | `long?` | Тип прицепа |
+| `trailerModelTypeId` | `long?` | Модель прицепа |
+| `isRented` | `boolean` | Признак аренды |
+| `ownershipTypeId` | `long?` | Тип владения |
+| `ownerName`, `ownerInn` | `string?` | Собственник и его ИНН |
+| `vinNumber` | `string?` | VIN |
+| `vehiclePassportNumber` | `string?` | Номер ПТС |
+| `releaseYear` | `date-time?` | Год или дата выпуска в формате модели API |
+
+## Списки и удаление
+
+Методы `List` возвращают стандартную коллекцию:
+
+```json
+{
+  "data": [],
+  "totalCount": 0
+}
+```
+
+Удаление выполняется соответствующим методом `Delete` с ID ресурса. Оно является мягким: запись остается в базе, но перестает быть доступной пользователям в обычных списках.
 
 ---
 

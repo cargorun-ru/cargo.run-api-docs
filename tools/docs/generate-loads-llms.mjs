@@ -10,7 +10,7 @@ const files = [
   "integration/scenario-forwarder-tracking.md", "integration/scenario-transporter.md", "integration/order-responses.md",
   "integration/sync.md", "integration/examples-1c.md", "api/overview.md", "api/errors-and-limits.md",
   "api/auth.md", "api/orders.md", "api/order-lifecycle.md", "api/order-responses.md", "api/reports.md",
-  "api/counterparties.md", "api/transporter.md", "api/directories.md", "api/map.md", "for-ai.md"
+  "api/counterparties.md", "api/transporter.md", "api/transporter-directories.md", "api/directories.md", "api/map.md", "for-ai.md"
 ];
 
 const descriptions = {
@@ -27,6 +27,7 @@ const descriptions = {
   "api/orders.md": "заказы", "api/order-lifecycle.md": "жизненный цикл заказа",
   "api/order-responses.md": "отклики и ручное назначение", "api/reports.md": "отчеты",
   "api/counterparties.md": "контрагенты", "api/transporter.md": "API перевозчика",
+  "api/transporter-directories.md": "водители, тягачи и прицепы перевозчика",
   "api/directories.md": "справочники", "api/map.md": "геокодирование и маршруты",
   "for-ai.md": "правила для LLM и ИИ-агентов"
 };
