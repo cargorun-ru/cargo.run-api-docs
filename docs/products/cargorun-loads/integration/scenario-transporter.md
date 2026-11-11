@@ -8,12 +8,13 @@
 
 1. Перевозчик получает или создает учетную запись.
 2. Система перевозчика авторизуется через `POST /api/Account/GenerateToken`.
-3. Перевозчик получает доступные заказы через `GET /api/TransporterOrders/GetList`.
-4. По интересующему заказу получает детали через `GET /api/TransporterOrders/GetInfo`.
-5. Отправляет отклик через `POST /api/TransporterOrderTruckMatchings/ApplyMatching` или `ApplyManualMatching`.
-6. Отслеживает результат выбора перевозчика.
-7. Если заказ назначен перевозчику, получает заявку через `GET /api/TransporterBids/GetInfo`.
-8. Передает фактические времена по точкам через `POST /api/TransporterBids/ApplyOrderPointFactTimes`.
+3. При необходимости проверяет или создает водителей, тягачи и прицепы в [справочниках перевозчика](../api/transporter-directories.md).
+4. Перевозчик получает доступные заказы через [`GET /api/TransporterOrders/GetList`](../api/transporter.md#transporter-orders-get-list).
+5. По интересующему заказу получает детали через `GET /api/TransporterOrders/GetInfo`.
+6. Отправляет отклик через `POST /api/TransporterOrderTruckMatchings/ApplyMatching` или `ApplyManualMatching`.
+7. Отслеживает результат выбора перевозчика.
+8. Если заказ назначен перевозчику, получает заявку через `GET /api/TransporterBids/GetInfo`.
+9. Передает фактические времена по точкам через `POST /api/TransporterBids/ApplyOrderPointFactTimes`.
 
 ---
 
@@ -42,7 +43,7 @@ GET /api/TransporterOrders/GetList
 Список можно фильтровать, например по периоду погрузки:
 
 ```http
-GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart le 2026-06-29T21:00:00.000Z
+GET /api/TransporterOrders/GetList?$filter=loadStart ge 2026-06-24T21:00:00.000Z and loadStart lt 2026-06-30T21:00:00.000Z
 ```
 
 Из ответа сохраните `data[].id`. Этот ID нужен для получения карточки заказа и отправки отклика.
@@ -83,6 +84,8 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
 | ТС | `GET /api/TransporterTruck/List` |
 | Прицеп | `GET /api/TransporterTrailer/List` |
 | Водитель | `GET /api/TransporterDriver/List` |
+
+Организация этих ресурсов определяется токеном. Передавать `organizationId` в методы `Apply` не требуется. Перед созданием водителя проверьте список, чтобы не создать дубль. Подробно: [Справочники перевозчика](../api/transporter-directories.md).
 
 Минимальный смысловой набор для отклика:
 

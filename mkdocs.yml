@@ -125,6 +125,7 @@ nav:
           - Отчеты: products/cargorun-loads/api/reports.md
           - Контрагенты: products/cargorun-loads/api/counterparties.md
           - Перевозчик: products/cargorun-loads/api/transporter.md
+          - Справочники перевозчика: products/cargorun-loads/api/transporter-directories.md
           - Справочники: products/cargorun-loads/api/directories.md
           - Карта: products/cargorun-loads/api/map.md
   - CARGO.RUN Маршрутизация:
