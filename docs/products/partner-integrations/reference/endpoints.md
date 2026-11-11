@@ -101,6 +101,10 @@
 Поддерживает OData-параметры и заголовок `X-MetaCount`. Для пагинации используйте
 `$top` не более `1000` и `$skip` либо курсор `(updatedAt,id)`.
 
+Поля `counterparty`, `temperatureRegime` и `vehicleType` являются частью модели
+ответа. Отдельного режима `GetList` без этих объектов нет; клиент должен игнорировать
+неиспользуемые поля.
+
 !!! warning "Миграция с GetCurrentList"
     `GET /api/integrations/Bids/GetCurrentList` удалён. Используйте `GetList` и
     определяйте источник заявки по `isCreatedByPlatform`. Отсутствие

@@ -93,7 +93,7 @@ HTTP-запрос задачи может завершиться успешно,
 | `id` | Внутренний ID заявки CARGO.RUN |
 | `bid.externalId` | Внешний ID заявки, переданный партнёрским сервисом. Не гарантируется уникальность |
 | `IntegrationBidListModel.externalId` | Значение `bid.externalId` независимо от источника заявки |
-| `IntegrationBidListModel.externalPlatformOrderId` | Числовой ID заказа партнёрской платформы, указанный перевозчиком в CARGO.RUN |
+| `IntegrationBidListModel.externalPlatformOrderId` | Числовой ID заказа партнёрской платформы, указанный перевозчиком в CARGO.RUN. Для заявки, созданной через `Apply` или `Write`, поле равно `null`, поскольку входная модель его не принимает |
 | `objects[].key` | При `Write` используется как `bid.externalId`, если поле внутри `bid` не заполнено |
 
 Для вызовов `Bids/GetList`, `Bids/Get`, `Bids/GetEvents` и других методов чтения

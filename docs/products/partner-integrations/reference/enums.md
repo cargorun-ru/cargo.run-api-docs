@@ -200,6 +200,11 @@ Started → Done
 бы одну точку `LoadPoint` и хотя бы одну точку `UnloadPoint`:
 `LoadUnloadPoint` не выполняет это обязательное условие самостоятельно.
 
+В `GetList.points` для заявок, созданных непосредственно в CARGO.RUN, дополнительно
+может вернуться `CustomPoint`. `StartPoint` и `ServicePoint` из массива
+`GetList.points` исключаются. Поэтому набор допустимых значений во входном
+`Bids/Apply` уже набора возможных значений в ответе.
+
 ### `BidPointLoadUnloadStatus`
 
 | JSON | Код | Значение |

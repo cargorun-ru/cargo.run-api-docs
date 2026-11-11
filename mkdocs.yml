@@ -130,7 +130,7 @@ nav:
           - Карта: products/cargorun-loads/api/map.md
   - CARGO.RUN Маршрутизация:
       - YATRS API: products/cargorun-yatrs/yatrs.md
-  - Интеграция с партнёрскими сервисами:
+  - API для операторов партнёрских платформ:
       - Обзор: products/partner-integrations/index.md
       - Быстрый старт: products/partner-integrations/getting-started.md
       - Подключение и авторизация: products/partner-integrations/auth.md
