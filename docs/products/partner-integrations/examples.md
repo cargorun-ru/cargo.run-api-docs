@@ -53,6 +53,7 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
+              "externalPlatformOrderId": 2471970,
               "counterparty": {
                 "name": "ООО Ромашка",
                 "inn": "7701234567"
@@ -94,8 +95,7 @@ Idempotency-Key: write-order-2471970-v1
               ],
               "car": { "number": "А123АА777", "brandName": "КАМАЗ" },
               "driver": {
-                "firstName": "Иван",
-                "lastName": "Иванов",
+                "fullName": "Иванов Иван Иванович",
                 "phoneNumber": "+79991234567"
               }
             }
