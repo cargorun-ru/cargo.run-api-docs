@@ -32,10 +32,14 @@
 - Для чтения и обновления сохраняйте `id` CARGO.RUN: `externalId` не уникален.
 - Для транслируемой заявки сопоставляйте заказ партнёра по числовому
   `externalPlatformOrderId`, а не по `externalId`.
-- Не передавайте `externalPlatformOrderId` в `Bids/Apply`: такого входного поля нет,
-  а в `GetList` для созданной партнёром заявки оно возвращается как `null`.
+- `Bids/Apply` принимает `bid.externalPlatformOrderId`; если поле передано и у
+  клиента настроена платформа, значение возвращается в `GetList`.
 - Считайте `bidPoints[].externalId` и `points[].externalId` строкой, даже если
   идентификатор состоит только из цифр.
+- `driver.fullName` заменяет отдельные части ФИО; при его наличии `firstName`,
+  `lastName` и `patronymic` не учитываются.
+- ETA ближайшей непосещённой точки находится в `estimatedBidPointId`,
+  `estimatedEnterDate` и `estimatedDuration` на уровне заявки `GetList`.
 - В списочной модели `updatedAt` учитывает изменения ETA; используйте его как курсор
   `GetList` и `ReadQuery`, но не приравнивайте к `updatedAt` детальной модели.
 - Во входных точках передавайте обязательный `type`: `LoadPoint`, `UnloadPoint` или

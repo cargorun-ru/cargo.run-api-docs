@@ -26,8 +26,9 @@ POST <baseUrl>/api/integrations/Tasks/Ping
 `Delete` и `ReadConfirmation` для партнёрских сервисов не поддерживаются.
 
 `Write` использует ту же модель и валидацию, что синхронный `Bids/Apply`, включая
-`counterparty`, `vehicleType`, `temperatureRegime` и геокодирование точек без
-координат. `ReadQuery` эквивалентен `Bids/GetList` без `X-Organization-Id`.
+`externalPlatformOrderId`, `driver.fullName`, `counterparty`, `vehicleType`,
+`temperatureRegime` и геокодирование точек без координат. `ReadQuery` эквивалентен
+`Bids/GetList` без `X-Organization-Id`.
 
 Поля `isCreatedByPlatform`, `points` и `events` гарантированы для результата
 `ReadQuery`. Прямой `Read / Bid / Summary` остаётся минимальной краткой моделью;
