@@ -53,7 +53,7 @@ Idempotency-Key: write-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
-              "externalPlatformOrderId": 2471970,
+              "externalPlatformOrderId": "2471970",
               "counterparty": {
                 "name": "ООО Ромашка",
                 "inn": "7701234567"
