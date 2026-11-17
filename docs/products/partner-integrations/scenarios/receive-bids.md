@@ -44,7 +44,7 @@ X-Organization-Id: 12345
 | `isCreatedByPlatform` | Источник | Сопоставление |
 |---:|---|---|
 | `true` | Заявку создал текущий партнёр | `externalId` содержит `bid.externalId`, а `externalPlatformOrderId` — переданный идентификатор заказа платформы, если он был указан |
-| `false` | Перевозчик транслирует заявку платформе | `externalPlatformOrderId` содержит числовой ID заказа, указанный перевозчиком |
+| `false` | Перевозчик транслирует заявку платформе | `externalPlatformOrderId` содержит строковый ID заказа, указанный перевозчиком |
 
 Всегда сохраняйте внутренний `id` CARGO.RUN и используйте его в последующих
 вызовах чтения. `externalId` не гарантируется уникальным и не заменяет внутренний
@@ -64,7 +64,7 @@ ID. Для транслируемой заявки сопоставляйте з
   {
     "id": 12345,
     "externalId": null,
-    "externalPlatformOrderId": 2471970,
+    "externalPlatformOrderId": "2471970",
     "isCreatedByPlatform": false,
     "organizationInn": "7701234567",
     "status": "Started",

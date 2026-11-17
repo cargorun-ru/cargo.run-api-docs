@@ -25,7 +25,7 @@ Content-Type: application/json
   "inn": "7701234567",
   "bid": {
     "externalId": "ORDER-2471970",
-    "externalPlatformOrderId": 2471970,
+    "externalPlatformOrderId": "2471970",
     "comment": "Доставка груза",
     "counterparty": {
       "name": "ООО Ромашка",
@@ -92,9 +92,10 @@ Content-Type: application/json
 Заявка автоматически запускается в работу. Если найденная заявка ещё не запущена, обновление также запускает её.
 
 `bid.externalId` — строковый идентификатор заявки в системе партнёра. Поле
-`bid.externalPlatformOrderId` — числовой идентификатор заказа на платформе
+`bid.externalPlatformOrderId` — строковый идентификатор заказа на платформе
 текущего интеграционного клиента. Если он передан и у клиента настроена платформа,
-CARGO.RUN связывает с ней заявку и возвращает значение в `GetList`.
+CARGO.RUN связывает с ней заявку и возвращает значение в `GetList`. Числовой
+идентификатор также передавайте строкой, например `"2471970"`.
 
 `bidPoints[].externalId` — строковый идентификатор точки в системе партнёра.
 Числовые идентификаторы также передавайте строкой, например `"12345"`. При
@@ -138,7 +139,7 @@ Idempotency-Key: create-order-2471970-v1
             "inn": "7701234567",
             "bid": {
               "externalId": "ORDER-2471970",
-              "externalPlatformOrderId": 2471970,
+              "externalPlatformOrderId": "2471970",
               "counterparty": {
                 "name": "ООО Ромашка",
                 "inn": "7701234567"

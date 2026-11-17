@@ -32,6 +32,8 @@ const optionalOverrides = new Map([
 ]);
 
 const typeOverrides = new Map(Object.entries({
+  "IntegrationBidEditModel.externalPlatformOrderId": "string",
+  "IntegrationBidListModel.externalPlatformOrderId": "string",
   "IntegrationBidDetailsModel.bid.status": "BidStatus",
   "IntegrationBidDetailsModel.bid.bidPointLoadUnloadStatus": "BidPointLoadUnloadStatus",
   "IntegrationBidDetailsModel.bid.paymentPeriodType": "PaymentPeriodType",
@@ -56,12 +58,12 @@ const descriptionOverrides = new Map(Object.entries({
   "IntegrationBidEditModel.bidPoints": "Точки маршрута: минимум одна точка погрузки и одна точка выгрузки. CARGO.RUN сортирует точки по `planEnterDate`.",
   "IntegrationBidEditModel.id": "Внутренний идентификатор заявки CARGO.RUN. Не указывается при создании; сохраняйте его из ответа и передавайте при обновлении. Если одновременно передан `externalId` и по нему найдена заявка, найденный ID имеет приоритет.",
   "IntegrationBidEditModel.externalId": "Идентификатор заявки в партнёрском сервисе. Не гарантируется уникальность.",
-  "IntegrationBidEditModel.externalPlatformOrderId": "Идентификатор заказа на платформе текущего интеграционного клиента. Если поле передано и у клиента настроена платформа, CARGO.RUN связывает с ней заявку. Поле не используется для поиска заявки при обновлении.",
+  "IntegrationBidEditModel.externalPlatformOrderId": "Идентификатор заказа на платформе текущего интеграционного клиента. Числовое значение также передавайте строкой. Если поле передано и у клиента настроена платформа, CARGO.RUN связывает с ней заявку. Поле не используется для поиска заявки при обновлении.",
   "IntegrationBidEditModel.cargos": "Грузы. Передайте как минимум один груз; у каждого груза обязательно поле `name`.",
   "IntegrationBidEditModel.trailer": "Прицеп. Необязателен; если объект передан, поле `number` обязательно.",
   "ApplyBidFromIntegrationContext.inn": "ИНН организации перевозчика: 10 цифр для организации или 12 цифр для ИП. Обязателен при синхронном и асинхронном создании или обновлении заявки.",
   "IntegrationBidListModel.externalId": "Внешний идентификатор `bid.externalId`. Не гарантируется уникальность; для вызовов чтения используйте `id` CARGO.RUN.",
-  "IntegrationBidListModel.externalPlatformOrderId": "Числовой идентификатор заказа партнёрской платформы. Может быть передан партнёром через `Apply` или `Write` либо указан перевозчиком при связывании заявки с платформой.",
+  "IntegrationBidListModel.externalPlatformOrderId": "Строковый идентификатор заказа партнёрской платформы. Может быть передан партнёром через `Apply` или `Write` либо указан перевозчиком при связывании заявки с платформой.",
   "IntegrationBidListModel.updatedAt": "Более позднее из времени изменения заявки и ETA. Для курсорной выборки используйте `$filter=updatedAt gt {курсор}&$orderby=updatedAt,id` и небольшое перекрытие интервалов.",
   "IntegrationBidListModel.estimatedBidPointId": "ID ближайшей непосещённой точки CARGO.RUN, для которой рассчитано время прибытия.",
   "IntegrationBidListModel.estimatedEnterDate": "Расчётное время прибытия на ближайшую непосещённую точку в часовом поясе точки.",
