@@ -7,7 +7,7 @@ const baseUrl = "https://cargorun-ru.github.io/cargo.run-api-docs/products/cargo
 const files = [
   "index.md", "introduction.md", "minimal-requirements.md", "formats.md", "statuses.md", "glossary.md",
   "integration/overview.md", "integration/scenario-cr-to-external.md", "integration/scenario-external-to-cr.md",
-  "integration/sync.md", "integration/async-sync-v2.md", "integration/examples-1c.md", "api/overview.md", "api/auth.md", "api/bids.md",
+  "integration/sync.md", "integration/async-sync-v2.md", "integration/examples-1c.md", "api/overview.md", "api/auth.md", "api/bids.md", "api/map.md",
   "api/async-tasks.md",
   "api/distribution-bids.md", "api/counterparties.md", "api/directories.md", "api/custom-catalogs.md",
   "api/etrn.md", "api/refueling-transactions.md", "api/trackers.md", "for-ai.md"
@@ -22,6 +22,7 @@ const descriptions = {
   "integration/async-sync-v2.md": "асинхронная синхронизация заявок API 2.0",
   "integration/examples-1c.md": "пример для 1С", "api/overview.md": "общие правила API",
   "api/auth.md": "получение и обновление токена", "api/bids.md": "заявки",
+  "api/map.md": "геокодирование адресов и координат",
   "api/async-tasks.md": "асинхронная очередь API 2.0",
   "api/distribution-bids.md": "заказы на распределение", "api/counterparties.md": "контрагенты",
   "api/directories.md": "справочники", "api/custom-catalogs.md": "пользовательские справочники",

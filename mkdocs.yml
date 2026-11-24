@@ -90,6 +90,7 @@ nav:
           - Обзор API: products/cargorun-logistics/api/overview.md
           - Авторизация: products/cargorun-logistics/api/auth.md
           - Заявки: products/cargorun-logistics/api/bids.md
+          - Карта и геокодирование: products/cargorun-logistics/api/map.md
           - Асинхронная очередь API 2.0: products/cargorun-logistics/api/async-tasks.md
           - Заказы: products/cargorun-logistics/api/distribution-bids.md
           - Контрагенты: products/cargorun-logistics/api/counterparties.md
