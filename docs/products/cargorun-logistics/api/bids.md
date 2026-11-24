@@ -48,12 +48,17 @@ POST /api/truckingbids/apply
 | `paymentTypeId` | `long?` | Да | Тип оплаты; для порожней заявки требуется валидный технический ID, значение игнорируется |
 | `ndsTypeId` | `long?` | Да | Тип НДС; для порожней заявки требуется валидный технический ID, значение игнорируется |
 | `price` | `double?` | Да | Стоимость заявки; для порожней заявки передайте техническое значение, например `1`, оно игнорируется |
+| `paymentPeriodInDays` | `int?` | Нет | Срок оплаты в днях |
+| `paymentPeriodType` | `PaymentPeriodType?` | Нет | Календарные (`InCalendarDays`) или банковские (`InBankingDays`) дни |
+| `invoiceTriggerType` | `InvoiceTriggerType?` | Нет | Основание для выставления счёта |
+| `payment` | `BidPaymentEditModel?` | Нет | Информация о документах и оплате |
 | `driver` | `object?` | Да | Водитель |
 | `carOption` | `object?` | Да | Автомобиль/тягач |
 | `trailerOption` | `object?` | Да | Прицеп |
 | `bidPoints` | `BidPointEditModel[]` | Да | Маршрутные точки, минимум две: погрузка и выгрузка |
 | `cargos` | `CargoModel[]?` | Да | Грузы; для порожней заявки нужен непустой технический массив, значения игнорируются |
 | `typeOptions` | `TypeOptionModel[]?` | Нет | Пользовательские справочники и дополнительные опции |
+| `extendedProperties` | `ExtendedPropertyJsonObject[]?` | Нет | Дополнительные поля заявки |
 | `externalId` | `string?` | Нет | Внешний ID заявки; не уникален и не заменяет `id` CARGO.RUN |
 | `comment` | `string?` | Нет | Комментарий |
 | `clientBidNumber` | `string?` | Нет | Номер заявки клиента |
@@ -70,12 +75,27 @@ POST /api/truckingbids/apply
 | `type` | `BidPointType` | Да | Тип точки, например погрузка или выгрузка |
 | `customPointTypeId` | `long?` | Нет | Тип пользовательской точки, если `type = CustomPoint` |
 | `planEnterDate` | `date-time?` | Нет | Плановое время прибытия |
+| `planLeaveDate` | `date-time?` | Нет | Плановое время убытия; должно быть не раньше `planEnterDate` |
 | `secondaryPlanEnterDate` | `date-time?` | Нет | Дополнительное плановое время |
 | `geozone` | `MapObjectEditModel?` | Да | Геозона/адрес точки |
+| `cargoOwnerDictionaryItemId` | `long?` | Нет | ID контрагента точки |
+| `counterpartyPointId` | `long?` | Нет | ID сохранённой точки контрагента |
 | `counterpartyId` | `long?` | Нет | Контрагент точки |
 | `contactPerson` | `object?` | Нет | Контактное лицо точки |
 | `comment` | `string?` | Нет | Комментарий к точке |
 | `loadOptions` | `object[]?` | Нет | Опции погрузки/выгрузки |
+| `typeOptions` | `TypeOptionModel[]?` | Нет | Значения пользовательских справочников точки |
+| `extendedProperties` | `ExtendedPropertyJsonObject[]?` | Нет | Дополнительные поля точки |
+
+`planEnterDate` и `planLeaveDate` задают окно пребывания в локальном времени
+адреса точки:
+
+```json
+{
+  "planEnterDate": "2026-09-23T14:47:00",
+  "planLeaveDate": "2026-09-23T16:47:00"
+}
+```
 
 ### Значения `BidPointType`
 
@@ -171,6 +191,74 @@ POST /api/truckingbids/apply
 |---|---|---|---|
 | `id` | `long` | Да | ID элемента пользовательского справочника |
 | `entityOptionId` | `long` | Да | ID настройки/свойства справочника |
+
+### Поля `extendedProperties[]`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `propertyName` | `string` | Системное имя дополнительного поля |
+| `value` | JSON scalar | Значение, соответствующее настройке поля; API приводит его к внутреннему строковому виду |
+
+```json
+{
+  "extendedProperties": [
+    {
+      "propertyName": "Kvitok",
+      "value": false
+    }
+  ]
+}
+```
+
+Не передавайте в `value` объекты или массивы. `extendedProperties`
+и `typeOptions` — разные механизмы: первый хранит значения полей, второй —
+ссылки на элементы пользовательских справочников.
+
+### Поля оплаты
+
+| Поле `payment` | Тип | Описание |
+|---|---|---|
+| `documentsTrackingStatus` | `DocumentsTrackingStatus?` | Статус передачи документов |
+| `plannedArrivalDate` | `date?` | Плановая дата прибытия документов |
+| `documentsReceiptDate` | `date?` | Дата получения документов |
+| `invoiceDate` | `date?` | Дата счёта |
+| `planPaymentDate` | `date?` | Плановая дата оплаты |
+| `factPaymentDate` | `date?` | Фактическая дата оплаты |
+| `paymentStatus` | `BidPaymentStatus` | `NotPaid`, `Paid`, `PartiallyPaid` или `Expired` |
+| `remainingPayment` | `double?` | Остаток к оплате |
+| `comment` | `string?` | Комментарий к оплате |
+
+```json
+{
+  "paymentPeriodType": "InBankingDays",
+  "paymentPeriodInDays": 12,
+  "invoiceTriggerType": "ByOriginal",
+  "payment": {
+    "documentsTrackingStatus": "NotShipped",
+    "invoiceDate": "2026-10-15",
+    "planPaymentDate": "2026-11-02",
+    "factPaymentDate": null,
+    "paymentStatus": "NotPaid",
+    "remainingPayment": null,
+    "comment": null
+  }
+}
+```
+
+### Назначение водителя и транспорта
+
+В заявку передаются ID объектов, уже созданных в CARGO.RUN:
+
+```json
+{
+  "driver": { "id": 128941470 },
+  "carOption": { "carId": 128772424 },
+  "trailerOption": { "trailerId": 128802920 }
+}
+```
+
+Внешняя система должна хранить сопоставление своих объектов с ID CARGO.RUN,
+а не искать их по названию при каждой выгрузке.
 
 ### Поля `emptyMileageBid`
 
@@ -512,6 +600,13 @@ GET /api/bids/get
 ```http
 GET /api/bids/getlistforexternal
 ```
+
+Отдельного webhook на создание или изменение заявки нет. Для надёжного получения
+изменений используйте этот метод с фиксированными окнами `updatedAt` или
+[асинхронную очередь API 2.0](./async-tasks.md) вместе с контрольной сверкой.
+
+Callback API 2.0 сообщает о завершении задания очереди. Он не является webhook
+бизнес-события заявки и не отменяет чтение и подтверждение результата задания.
 
 Метод возвращает список заявок по фильтру для внешних сервисов с более подробной информацией. Используется OData-формат параметров.
 

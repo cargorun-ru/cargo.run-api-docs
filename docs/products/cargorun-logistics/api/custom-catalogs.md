@@ -35,6 +35,10 @@ GET /api/DistributionBids/GetListForExternal
 | `id` | `long` | ID элемента справочника |
 | `entityOptionId` | `long` | ID настройки/свойства справочника, к которому относится значение |
 
+`typeOptions` не следует путать с `extendedProperties`. В `typeOptions` передаются ссылки на
+существующие элементы справочника, а в `extendedProperties` — имя дополнительного поля и его
+скалярное значение.
+
 Чтобы получить текстовое значение элемента справочника, используйте `id` из `typeOptions[]` и запросите элемент через `GET /api/Catalogs/GetItems`.
 
 ```http
@@ -166,6 +170,20 @@ GET /api/Catalogs/GetItems?$filter=id eq {typeOptions[].id}
 ```
 
 5. Использовать `displayName` из ответа как человекочитаемое значение.
+
+При записи заявки выполните обратную операцию: найдите элемент нужного справочника,
+возьмите его `id` и ID настройки привязки `entityOptionId`, затем передайте оба значения:
+
+```json
+{
+  "typeOptions": [
+    {
+      "id": 129668531,
+      "entityOptionId": 126364242
+    }
+  ]
+}
+```
 
 Пример:
 

@@ -17,6 +17,7 @@
 - [api/overview.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/overview/): общие правила API.
 - [api/auth.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/auth/): получение и обновление токена.
 - [api/bids.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/bids/): заявки.
+- [api/map.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/map/): геокодирование адресов и координат.
 - [api/async-tasks.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/async-tasks/): асинхронная очередь API 2.0.
 - [api/distribution-bids.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/distribution-bids/): заказы на распределение.
 - [api/counterparties.md](https://cargorun-ru.github.io/cargo.run-api-docs/products/cargorun-logistics/api/counterparties/): контрагенты.
