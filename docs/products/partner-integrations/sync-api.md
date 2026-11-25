@@ -10,6 +10,7 @@
 | Проверить организацию | [`GET /api/integrations/Organizations/Check`](reference/endpoints.md#get-apiintegrationsorganizationscheck) |
 | Создать организацию или получить доступ | [`POST /api/integrations/Organizations/Apply`](reference/endpoints.md#post-apiintegrationsorganizationsapply) |
 | Создать или обновить заявку | [`POST /api/integrations/Bids/Apply`](reference/endpoints.md#post-apiintegrationsbidsapply) |
+| Отменить заявку | [`POST /api/integrations/Bids/Cancel`](reference/endpoints.md#post-apiintegrationsbidscancel) |
 | Получить собственные и транслируемые заявки | [`GET /api/integrations/Bids/GetList`](reference/endpoints.md#get-apiintegrationsbidsgetlist) |
 | Получить карточку заявки | [`GET /api/integrations/Bids/Get`](reference/endpoints.md#get-apiintegrationsbidsget) |
 | Получить события | [`GET /api/integrations/Bids/GetEvents`](reference/endpoints.md#get-apiintegrationsbidsgetevents) |

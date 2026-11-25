@@ -138,6 +138,7 @@ nav:
       - Модель доступа: products/partner-integrations/access.md
       - Сценарии:
           - Создание и обновление заявки: products/partner-integrations/scenarios/create-update-bid.md
+          - Отмена заявки: products/partner-integrations/scenarios/cancel-bid.md
           - Получение заявок: products/partner-integrations/scenarios/receive-bids.md
           - Отслеживание исполнения: products/partner-integrations/scenarios/track-execution.md
           - Восстановление синхронизации: products/partner-integrations/scenarios/recovery.md

@@ -33,7 +33,13 @@ $orderby=updatedAt,id
 
 ## Идемпотентность создания
 
-Для синхронного [`Bids/Apply`](reference/endpoints.md#post-apiintegrationsbidsapply) повторяйте запрос с тем же `externalId`.
+Для синхронного [`Bids/Apply`](reference/endpoints.md#post-apiintegrationsbidsapply)
+при повторе используйте те же стабильные `externalId` и
+`externalPlatformOrderId`. Если внутренний `id` не определён, сервер сначала ищет
+заявку по `externalId`, затем — по сочетанию организации, платформы и
+`externalPlatformOrderId`. Это снижает риск дубля после тайм-аута, но не является
+ограничением уникальности на уровне хранилища. После успешного ответа сохраняйте
+`id` CARGO.RUN и используйте его в следующих запросах.
 
 Для асинхронной очереди дополнительно используйте уникальный `Idempotency-Key`. Повтор с тем же ключом в течение 24 часов возвращает существующую задачу.
 

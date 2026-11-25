@@ -11,6 +11,7 @@ const files = [
   "auth.md",
   "access.md",
   "scenarios/create-update-bid.md",
+  "scenarios/cancel-bid.md",
   "scenarios/receive-bids.md",
   "scenarios/track-execution.md",
   "scenarios/recovery.md",
