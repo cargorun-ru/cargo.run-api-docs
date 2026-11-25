@@ -29,17 +29,23 @@
 - Определяйте источник записи по `isCreatedByPlatform`, а не по наличию `externalId`.
 - Перед вызовом `GetList` явно решите, нужна одна организация или все доступные:
   отсутствие `X-Organization-Id` расширяет область выборки.
-- Для чтения и обновления сохраняйте `id` CARGO.RUN: `externalId` не уникален.
+- Для чтения, обновления и отмены сохраняйте `id` CARGO.RUN: `externalId` не уникален.
 - Для транслируемой заявки сопоставляйте заказ партнёра по строковому
   `externalPlatformOrderId`, а не по `externalId`.
-- `Bids/Apply` принимает `bid.externalPlatformOrderId`; если поле передано и у
-  клиента настроена платформа, значение возвращается в `GetList`.
+- `Bids/Apply` принимает `bid.externalPlatformOrderId`; если внутренний `id` не
+  определён и у клиента настроена платформа, значение используется для поиска
+  существующей заявки по организации и платформе. Уникальность поля на уровне
+  хранилища не гарантируется, поэтому после ответа сохраняйте `id` CARGO.RUN.
+- Для отмены используйте синхронный `Bids/Cancel`: предпочтительно передавайте
+  `id` CARGO.RUN, альтернативно — `externalPlatformOrderId` вместе с `inn`.
+  Асинхронной команды отмены нет.
 - Считайте `bidPoints[].externalId` и `points[].externalId` строкой, даже если
   идентификатор состоит только из цифр.
 - `driver.fullName` заменяет отдельные части ФИО; при его наличии `firstName`,
   `lastName` и `patronymic` не учитываются.
 - ETA ближайшей непосещённой точки находится в `estimatedBidPointId`,
-  `estimatedEnterDate` и `estimatedDuration` на уровне заявки `GetList`.
+  `estimatedBidPointExternalId`, `estimatedEnterDate` и `estimatedDuration` на
+  уровне заявки `GetList`.
 - В списочной модели `updatedAt` учитывает изменения ETA; используйте его как курсор
   `GetList` и `ReadQuery`, но не приравнивайте к `updatedAt` детальной модели.
 - Во входных точках передавайте обязательный `type`: `LoadPoint`, `UnloadPoint` или

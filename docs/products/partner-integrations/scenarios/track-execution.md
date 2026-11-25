@@ -6,6 +6,7 @@
 
 | Данные | Метод |
 |---|---|
+| Отмена заявки | [`POST /api/integrations/Bids/Cancel`](cancel-bid.md) |
 | Карточка и ETA | [`GET /api/integrations/Bids/Get`](../reference/endpoints.md#get-apiintegrationsbidsget) |
 | События | [`GET /api/integrations/Bids/GetEvents`](../reference/endpoints.md#get-apiintegrationsbidsgetevents) |
 | Плановый маршрут | [`GET /api/integrations/Bids/GetPlannedRoute`](../reference/endpoints.md#get-apiintegrationsbidsgetplannedroute) |
@@ -63,6 +64,7 @@ ETA находится в `bid.estimation`:
 Объединённый `GetList` возвращает на уровне заявки ETA ближайшей непосещённой точки:
 
 - `estimatedBidPointId` — ID точки CARGO.RUN;
+- `estimatedBidPointExternalId` — строковый ID этой точки в системе партнёра;
 - `estimatedEnterDate` — расчётное время прибытия в часовом поясе точки;
 - `estimatedDuration` — оставшееся время до прибытия в формате `d.hh:mm:ss`.
 
