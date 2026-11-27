@@ -11,7 +11,7 @@
 3. При необходимости проверяет или создает водителей, тягачи и прицепы в [справочниках перевозчика](../api/transporter-directories.md).
 4. Перевозчик получает доступные заказы через [`GET /api/TransporterOrders/GetList`](../api/transporter.md#transporter-orders-get-list).
 5. По интересующему заказу получает детали через `GET /api/TransporterOrders/GetInfo`.
-6. Отправляет отклик через `POST /api/TransporterOrderTruckMatchings/ApplyMatching` или `ApplyManualMatching`.
+6. Подготавливает модели выбранных ресурсов и отправляет отклик через [`POST /api/TransporterOrderTruckMatchings/ApplyMatching`](../api/transporter.md#transporter-matching-apply) или [`ApplyManualMatching`](../api/transporter.md).
 7. Отслеживает результат выбора перевозчика.
 8. Если заказ назначен перевозчику, получает заявку через `GET /api/TransporterBids/GetInfo`.
 9. Передает фактические времена по точкам через `POST /api/TransporterBids/ApplyOrderPointFactTimes`.
@@ -77,7 +77,7 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
 
 Используется, когда ТС, водитель и прицеп уже есть в справочниках.
 
-Перед вызовом получите ID сущностей из справочников перевозчика:
+Сначала найдите сущности в справочниках перевозчика:
 
 | Данные | Метод |
 |---|---|
@@ -87,13 +87,25 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
 
 Организация этих ресурсов определяется токеном. Передавать `organizationId` в методы `Apply` не требуется. Перед созданием водителя проверьте список, чтобы не создать дубль. Подробно: [Справочники перевозчика](../api/transporter-directories.md).
 
-Минимальный смысловой набор для отклика:
+После выбора подготовьте вложенные модели для отклика:
+
+| Данные | Метод |
+|---|---|
+| Тягач и назначенные ему водитель и прицеп | [`GET /api/TransporterTruck/GetTruckWithDriverAndTrailer?Id={id}`](../api/transporter.md#transporter-truck-get-for-matching) |
+| Водитель | [`GET /api/TransporterDriver/GetDriverForMatching?Id={id}`](../api/transporter.md#transporter-driver-get-for-matching) |
+| Прицеп | [`GET /api/TransporterTrailer/GetTrailerForMatching?Id={id}`](../api/transporter.md#transporter-trailer-get-for-matching) |
+
+Передайте полученные объекты в `truck`, `driver` и `trailer` метода [`ApplyMatching`](../api/transporter.md#transporter-matching-apply). Не обнуляйте поля подготовленной модели.
+
+Основные данные отклика:
 
 - `orderId` — ID заказа из `TransporterOrders/GetList`;
 - `price` — ставка перевозчика;
 - `ndsTypeId` — тип НДС;
-- `truck.id`, `trailer.id`, `driver.id` — выбранные сущности перевозчика;
+- `truck`, `driver`, `trailer` — подготовленные вложенные модели выбранных ресурсов;
 - `logistFullName`, `logistPhoneNumber` — контакт перевозчика.
+
+Объект только с `id` допустим, если соответствующая запись справочника уже полностью заполнена. Если обязательных данных в ней нет, одного `id` недостаточно: передайте недостающие поля, возвращенные подготовительными методами. Прицеп может быть `null`, если он не требуется.
 
 ### Отклик с ручным заполнением
 

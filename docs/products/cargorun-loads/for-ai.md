@@ -31,6 +31,7 @@
 7. После изменяющей операции повторно прочитайте объект и проверьте результат.
 8. Не считайте отсутствие `truckCurrentLocation` ошибкой и не называйте координаты текущими без проверки `fixedAt`.
 9. Никогда не вызывайте `GET /api/TransporterOrders/GetInfo` параллельно. Этот метод предназначен для последовательного чтения карточек в пользовательском интерфейсе, а не для массовой синхронизации. Обрабатывайте ID через очередь с одним активным запросом: отправляйте следующий вызов или повтор только после завершения предыдущего. Не используйте `Promise.all`, параллельные потоки или несколько одновременно работающих обработчиков.
+10. При формировании [`POST /api/TransporterOrderTruckMatchings/ApplyMatching`](./api/transporter.md#transporter-matching-apply) не считайте одного ID ресурса безусловно достаточным. Получите модели через [`GetTruckWithDriverAndTrailer`](./api/transporter.md#transporter-truck-get-for-matching), [`GetDriverForMatching`](./api/transporter.md#transporter-driver-get-for-matching) и [`GetTrailerForMatching`](./api/transporter.md#transporter-trailer-get-for-matching), сохраните полученные непустые значения и передайте вложенные объекты `truck`, `driver` и `trailer`. Объект только с `id` используйте лишь когда известно, что справочная запись полностью заполнена. Эти точечные методы не используйте для массовой синхронизации.
 
 ## Минимальный контекст
 

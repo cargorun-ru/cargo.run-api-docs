@@ -170,13 +170,161 @@ GET /api/TransporterOrders/GetInfo?id={order_id}
 
 ---
 
-## 3. Создание отклика из справочников {#transporter-matching-apply}
+## 3. Подготовка ресурсов для отклика {#transporter-matching-resources}
+
+Перед созданием отклика получите модели выбранных тягача, водителя и прицепа в формате, который принимает [`POST /api/TransporterOrderTruckMatchings/ApplyMatching`](#transporter-matching-apply).
+
+!!! note "Назначение методов"
+    Это точечные вспомогательные методы пользовательского интерфейса для подготовки одного отклика, а не методы массовой синхронизации справочников. Для получения коллекций используйте методы `List` из раздела [«Справочники перевозчика»](./transporter-directories.md).
+
+Все три метода требуют Bearer-токен пользователя организации. Параметр `Id` обязателен. Обычный пользователь может получить только ресурс доступной ему организации; при неверном, удаленном или недоступном ID запрос отклоняется стандартной ошибкой API.
+
+### Тягач и связанные ресурсы {#transporter-truck-get-for-matching}
+
+```http
+GET /api/TransporterTruck/GetTruckWithDriverAndTrailer?Id={truck_id}
+Authorization: Bearer <access_token>
+```
+
+Метод возвращает тягач и, если они назначены ему в справочнике, связанного водителя и прицеп. Удаленные водитель или прицеп, а также ресурсы другой организации в ответ не включаются.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `truck` | `TransporterOrderTruckMatchingTruckModel` | Выбранный тягач |
+| `driver` | `TransporterOrderTruckMatchingDriverModel?` | Назначенный тягачу водитель |
+| `trailer` | `TransporterOrderTruckMatchingTrailerModel?` | Назначенный тягачу прицеп |
+
+```json
+{
+  "truck": {
+    "id": 1001,
+    "trailerTypeId": 1,
+    "modelTypeId": 12,
+    "number": "Х777ХХ16",
+    "ownershipTypeId": 2,
+    "ownerName": null,
+    "ownerInn": null,
+    "sourceType": 10,
+    "isRented": false,
+    "organizationId": 95713
+  },
+  "driver": {
+    "id": 3001,
+    "lastName": "Петров",
+    "firstName": "Петр",
+    "patronymic": "Петрович",
+    "phoneNumber": "79999999999",
+    "passportSeries": "9200",
+    "passportNumber": "123456",
+    "passportGivenBy": "МВД России",
+    "passportGivenWhen": "2020-04-15T00:00:00",
+    "organizationId": 95713
+  },
+  "trailer": {
+    "id": 2001,
+    "ownershipTypeId": 2,
+    "ownerName": null,
+    "ownerInn": null,
+    "number": "А123ВС77",
+    "isRented": false,
+    "organizationId": 95713
+  }
+}
+```
+
+Поля `driver` и `trailer` могут быть `null`. В таком случае при необходимости выберите ресурс отдельно и получите его одним из следующих методов.
+
+### Водитель {#transporter-driver-get-for-matching}
+
+```http
+GET /api/TransporterDriver/GetDriverForMatching?Id={driver_id}
+Authorization: Bearer <access_token>
+```
+
+Метод возвращает `TransporterOrderTruckMatchingDriverModel`:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID водителя |
+| `lastName`, `firstName`, `patronymic` | `string?` | ФИО |
+| `phoneNumber` | `string?` | Телефон |
+| `passportSeries`, `passportNumber` | `string?` | Серия и номер паспорта |
+| `passportGivenBy` | `string?` | Кем выдан паспорт |
+| `passportGivenWhen` | `date-time?` | Дата выдачи паспорта |
+| `organizationId` | `long` | ID организации владельца ресурса |
+
+```json
+{
+  "id": 3001,
+  "lastName": "Петров",
+  "firstName": "Петр",
+  "patronymic": "Петрович",
+  "phoneNumber": "79999999999",
+  "passportSeries": "9200",
+  "passportNumber": "123456",
+  "passportGivenBy": "МВД России",
+  "passportGivenWhen": "2020-04-15T00:00:00",
+  "organizationId": 95713
+}
+```
+
+### Прицеп {#transporter-trailer-get-for-matching}
+
+```http
+GET /api/TransporterTrailer/GetTrailerForMatching?Id={trailer_id}
+Authorization: Bearer <access_token>
+```
+
+Метод возвращает `TransporterOrderTruckMatchingTrailerModel`:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `long` | ID прицепа |
+| `ownershipTypeId` | `long?` | Тип владения |
+| `ownerName`, `ownerInn` | `string?` | Наименование и ИНН собственника |
+| `number` | `string?` | Госномер прицепа |
+| `isRented` | `boolean` | Признак аренды |
+| `organizationId` | `long` | ID организации владельца ресурса |
+
+```json
+{
+  "id": 2001,
+  "ownershipTypeId": 2,
+  "ownerName": null,
+  "ownerInn": null,
+  "number": "А123ВС77",
+  "isRented": false,
+  "organizationId": 95713
+}
+```
+
+---
+
+## 4. Создание отклика из справочников {#transporter-matching-apply}
 
 ```http
 POST /api/TransporterOrderTruckMatchings/ApplyMatching
 ```
 
-Метод используется, если данные ТС, водителя или прицепа заполняются из справочников.
+Метод используется, если ТС, водитель и прицеп выбираются из справочников перевозчика. Поля `truck`, `driver` и `trailer` принимают вложенные модели ресурсов, а не отдельные числовые ID.
+
+Рекомендуемая последовательность:
+
+1. Найдите ресурс через соответствующий метод `List`.
+2. Получите подготовленную модель через [`GetTruckWithDriverAndTrailer`](#transporter-truck-get-for-matching), [`GetDriverForMatching`](#transporter-driver-get-for-matching) или [`GetTrailerForMatching`](#transporter-trailer-get-for-matching).
+3. Передайте полученные объекты в `truck`, `driver` и `trailer`, не заменяя неизвестные значения пустыми строками или нулями.
+
+Объекта вида `{"id": 1001}` достаточно только тогда, когда справочная запись уже содержит все сведения, необходимые для отклика. Если в справочнике отсутствуют обязательные значения, их нужно передать во вложенной модели: сервер проверит их и может заполнить ими пустые поля ресурса.
+
+Для отклика на заказ другой организации условно обязательны:
+
+| Ресурс | Поля, которые нужно передать, если они не заполнены в справочнике |
+|---|---|
+| Тягач | `trailerTypeId`, `modelTypeId`, `ownershipTypeId`; для арендованного — также `ownerName`, `ownerInn` |
+| Водитель | `lastName`, `firstName`, `phoneNumber`, `passportSeries`, `passportNumber`, `passportGivenBy`, `passportGivenWhen` |
+| Прицеп | `ownershipTypeId`; для арендованного — также `ownerName`, `ownerInn` |
+
+Тягач и водитель обязательны, если соответствующие признаки временных ресурсов равны `false`. Прицеп может быть `null`, если он не требуется.
 
 
 Основные поля:
@@ -206,17 +354,35 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
   "price": 23000,
   "truck": {
     "id": 1001,
+    "trailerTypeId": 1,
+    "modelTypeId": 12,
+    "number": "Х777ХХ16",
+    "ownershipTypeId": 2,
+    "ownerName": null,
+    "ownerInn": null,
     "organizationId": 95713,
     "sourceType": 10,
     "isRented": false
   },
   "trailer": {
     "id": 2001,
+    "ownershipTypeId": 2,
+    "number": "А123ВС77",
+    "ownerName": null,
+    "ownerInn": null,
     "organizationId": 95713,
     "isRented": false
   },
   "driver": {
     "id": 3001,
+    "lastName": "Петров",
+    "firstName": "Петр",
+    "patronymic": "Петрович",
+    "phoneNumber": "79999999999",
+    "passportSeries": "9200",
+    "passportNumber": "123456",
+    "passportGivenBy": "МВД России",
+    "passportGivenWhen": "2020-04-15T00:00:00",
     "organizationId": 95713
   },
   "ndsTypeId": 1,
@@ -231,7 +397,7 @@ POST /api/TransporterOrderTruckMatchings/ApplyMatching
 
 ---
 
-## 4. Создание отклика с ручным заполнением
+## 5. Создание отклика с ручным заполнением
 
 ```http
 POST /api/TransporterOrderTruckMatchings/ApplyManualMatching
@@ -258,7 +424,7 @@ POST /api/TransporterOrderTruckMatchings/ApplyManualMatching
 
 ---
 
-## 5. Просмотр отклика
+## 6. Просмотр отклика
 
 ```http
 GET /api/TransporterOrderTruckMatchings/Get?orderTruckMatchingId={matching_id}
@@ -391,7 +557,7 @@ GET /api/TransporterOrderTruckMatchings/GetForEditMatching?Id={matching_id}&IsNe
 
 ---
 
-## 6. Изменение и удаление отклика
+## 7. Изменение и удаление отклика
 
 | Действие | Метод |
 |---|---|
@@ -426,7 +592,7 @@ POST /api/TransporterOrderTruckMatchings/Delete?Id={matching_id}
 
 ---
 
-## 7. Получение назначенной заявки
+## 8. Получение назначенной заявки
 
 ```http
 GET /api/TransporterBids/GetInfo?id={order_id}
@@ -436,7 +602,7 @@ GET /api/TransporterBids/GetInfo?id={order_id}
 
 ---
 
-## 8. Передача фактических времен по точкам
+## 9. Передача фактических времен по точкам
 
 ```http
 POST /api/TransporterBids/ApplyOrderPointFactTimes
@@ -466,7 +632,7 @@ POST /api/TransporterBids/ApplyOrderPointFactTimes
 
 ---
 
-## 9. Справочники перевозчика
+## 10. Справочники перевозчика
 
 | Сущность | Список | Создание/редактирование | Удаление |
 |---|---|---|---|
