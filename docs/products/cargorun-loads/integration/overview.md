@@ -38,11 +38,12 @@
 
 Основные методы:
 
-- `GET /api/TransporterOrders/GetList`;
-- `GET /api/TransporterOrders/GetInfo`;
-- `POST /api/TransporterOrderTruckMatchings/ApplyMatching`;
-- `POST /api/TransporterOrderTruckMatchings/ApplyManualMatching`;
-- `GET /api/TransporterBids/GetInfo`.
+- [`GET /api/TransporterOrders/GetList`](../api/transporter.md#transporter-orders-get-list);
+- [`GET /api/TransporterOrders/GetInfo`](../api/transporter.md);
+- [`GET /api/TransporterTruck/GetTruckWithDriverAndTrailer`](../api/transporter.md#transporter-truck-get-for-matching), [`GET /api/TransporterDriver/GetDriverForMatching`](../api/transporter.md#transporter-driver-get-for-matching) и [`GET /api/TransporterTrailer/GetTrailerForMatching`](../api/transporter.md#transporter-trailer-get-for-matching);
+- [`POST /api/TransporterOrderTruckMatchings/ApplyMatching`](../api/transporter.md#transporter-matching-apply);
+- [`POST /api/TransporterOrderTruckMatchings/ApplyManualMatching`](../api/transporter.md);
+- [`GET /api/TransporterBids/GetInfo`](../api/transporter.md).
 
 ---
 
